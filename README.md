@@ -51,6 +51,9 @@ Two numbers are still assumptions: slot width and face metal thickness.
   spools; hardwood dowel is stiffer still.
 - Nothing retains the rods because nothing pulls them up: spools press them
   into the saddles and are lifted off the rods, never with them.
+- The bracket is 24 mm wide — narrower than the 1" gap between the two
+  slot columns at the module centre, so both bays can carry cradles at the
+  same height without the centre brackets colliding.
 
 ## Printing
 

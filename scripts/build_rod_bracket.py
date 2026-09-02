@@ -65,7 +65,11 @@ HOOK_ROWS = 4
 # --- Bracket body ----------------------------------------------------------
 PLATE_THICKNESS = 6.0
 PLATE_HEIGHT = 90.0  # spans the 4 hook rows; also the arm/rod height
-BRACKET_WIDTH = 40.0  # face bearing width against the upright
+# 24 wide: seats on a single rail face and stays inside the 25.4 mm gap
+# between the two columns at the module centre, so brackets can mount in
+# both bays at the same height. The rod pair braces the assembled frame
+# against twist, so the narrow plate costs nothing structurally.
+BRACKET_WIDTH = 24.0
 GAUGE_PLATE_THICKNESS = 5.0
 COUPON_WIDTH = 8.0
 TOP_HOOK_NECK_TOP = 88.0  # top row 2 mm below the plate top
