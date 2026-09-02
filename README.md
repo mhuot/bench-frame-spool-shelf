@@ -49,14 +49,41 @@ Two numbers are still assumptions: slot width and face metal thickness.
 - A resting spool's top sits ~285 mm above the bracket's bottom edge, so
   leave ~12" of frame space above the mounting slots.
 - For the 30" DuraFrame (10-063-100): upright centres are ~28" apart; cut
-  rods to ~29.5" (750 mm) to span both saddles fully. Each of the two rods
-  carries half the load, so sag on 1" PVC is ~1.5 mm with eight 1 kg
-  spools; hardwood dowel is stiffer still.
+  rods to ~29.5" (750 mm) to span both saddles fully. See "Rod materials,
+  sag, and cost" below for what to make them from.
 - Nothing retains the rods because nothing pulls them up: spools press them
   into the saddles and are lifted off the rods, never with them.
 - The bracket is 24 mm wide — narrower than the 1" gap between the two
   slot columns at the module centre, so both bays can carry cradles at the
   same height without the centre brackets colliding.
+
+## Rod materials, sag, and cost
+
+Capacity per level is ~12 kg total (two brackets at ~6 kg each, ~2x
+structural margin) — a full row of nine 1 kg spools, or count 3 kg spools
+by weight. Rod strength is never the limit (PVC runs at ~2 MPa of a
+~50 MPa allowable); **stiffness is**, because sagging rods form a shallow
+valley and spools slowly roll and bunch toward the centre.
+
+Mid-span sag per rod at full load (~5.6 kg/rod over the 711 mm span), and
+cost per level (two ~29.5" rods; Home Depot, 2026-09):
+
+| Rod | Sag | Fits stock 34.2 mm pocket? | Cost per level |
+|---|---|---|---|
+| 1" sch 40 PVC (default) | ~2.4 mm, creeps to 4-6 mm over months | yes | ~$5 (10 ft = 4 rods) |
+| 1" sch 40 aluminum pipe | ~0.1 mm, no creep | **yes — same 33.4 mm OD as PVC** | ~$32 ($48/8 ft = 3 rods) |
+| 1-1/4" hardwood dowel | ~0.4 mm | close (2.5 mm play — acceptable) | ~$10 |
+| 1" hardwood dowel | ~1.0 mm | no — `ROD_OUTER_DIAMETER = 25.4` | ~$6 |
+| 3/4" EMT steel conduit | ~0.25 mm | no — `ROD_OUTER_DIAMETER = 23.4` | ~$5 (10 ft = 4 rods) |
+| 1" EMT steel conduit | ~0.1 mm | no — `ROD_OUTER_DIAMETER = 29.5` | ~$7 |
+
+PVC is fine to start, and the open saddles mean the rods can be swapped
+any time. The aluminum pipe is the nicest no-rebuild upgrade but ~6x
+EMT's price for a sag difference (~0.1 vs ~0.25 mm) that is invisible in
+practice; EMT is the stiffness-per-dollar champion and costs only a
+pocket rebuild (one constant plus a saddle-coupon re-print). Deburr cut
+ends whichever you pick — spool flanges occasionally touch the rod ends
+when loading.
 
 ## Printing
 
