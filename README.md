@@ -31,7 +31,10 @@ Two numbers are still assumptions: slot width and face metal thickness.
    the blade column should enter its slots, drop ~14 mm, and sit flush
    with no rock. If it binds or rattles, edit `SLOT_WIDTH` or
    `FACE_METAL_THICKNESS` at the top of `scripts/build_rod_bracket.py`,
-   rebuild, re-print.
+   rebuild, re-print. (First gauge print, 2026-09-02: blades entered and
+   dropped a few mm, then pinched before seating — the throat clearance
+   has since been widened from 0.8 to 1.8 mm and the lips got lead-in
+   chamfers. Re-test with the current STL.)
 2. Print `saddle_coupon.stl` and drop your actual rod stock into both
    pockets: it should seat fully and lift out without force. Adjust
    `ROD_OUTER_DIAMETER` / `SADDLE_CLEARANCE` if not.

@@ -60,10 +60,17 @@ FACE_METAL_THICKNESS = 2.0  # assumed — gauge confirms via throat fit
 # columns meeting at the module centre), and a one-column bracket mounts on
 # any of them. Four rows because that lone column carries the whole moment.
 HOOK_TAB_WIDTH = 2.4  # blade width through the slot (0.8 clearance)
-HOOK_THROAT = FACE_METAL_THICKNESS + 0.8  # gap behind plate for the face metal
+# Throat clearance 1.8, not 0.8: the first printed gauge slid into the slots
+# and dropped a few mm but pinched before seating — real face metal plus
+# paint plus the punched slot's inward burr is thicker than the bare 2.0 mm
+# assumption. Looseness costs nothing: the load moment presses the plate
+# flat against the upright once seated.
+HOOK_THROAT = FACE_METAL_THICKNESS + 1.8  # gap behind plate for the face metal
 HOOK_NECK_HEIGHT = 5.0  # bears on the slot's bottom edge
 HOOK_LIP_THICKNESS = 4.5
 HOOK_LIP_DROP = 12.0  # engagement below the neck, behind the face
+HOOK_LIP_CHAMFER = 1.5  # lead-in on each lip's inner-bottom corner, so the
+# descending lip wedges past slot-edge burrs instead of catching on them
 HOOK_ROWS = 4
 # Insertion needs NECK + DROP < SLOT_HEIGHT - play; 5 + 12 = 17 < 19.05.
 
@@ -136,6 +143,7 @@ PARAMETERS = {
     "hookNeckHeight": (HOOK_NECK_HEIGHT, _REFERENCE),
     "hookLipThickness": (HOOK_LIP_THICKNESS, _REFERENCE),
     "hookLipDrop": (HOOK_LIP_DROP, _REFERENCE),
+    "hookLipChamfer": (HOOK_LIP_CHAMFER, _REFERENCE),
     "plateThickness": (PLATE_THICKNESS, _REFERENCE),
     "plateHeight": (PLATE_HEIGHT, _REFERENCE),
     "gaugePlateThickness": (GAUGE_PLATE_THICKNESS, _REFERENCE),
@@ -229,7 +237,8 @@ def _build_hooks(component, plane):
                 (0.0, neck_top),
                 (lip_back, neck_top),
                 (lip_back, lip_bottom),
-                (back, lip_bottom),
+                (back - HOOK_LIP_CHAMFER, lip_bottom),
+                (back, lip_bottom + HOOK_LIP_CHAMFER),
                 (back, neck_bottom),
                 (0.0, neck_bottom),
             ],
