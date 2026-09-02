@@ -1,17 +1,23 @@
-"""Fusion 360 script: spool-rod bracket for the Ergotron LAN Organizer 3000.
+"""Fusion 360 script: spool cradle bracket for the Ergotron LAN Organizer 3000.
 
 Run inside Fusion via scripts/run_in_fusion.py. Builds one printable body in
-a new unsaved parametric document and exports STL/STEP/F3D. Two variants:
+a new unsaved parametric document and exports STL/STEP/F3D. Three variants:
 
-- "bracket" (default): full bracket — slotted-upright hooks, triangulated
-  cantilever arm, up-open saddle for the spool rod. Print two per rod.
-- "gauge": just the hook plate. A ~20 minute print that verifies slot width,
-  vertical pitch, column spacing, throat depth, and engagement on the real
-  DuraFrame before committing to full brackets.
+- "bracket" (default): full cradle bracket — slotted-upright hooks and a
+  cantilever arm carrying TWO up-open saddles. Two parallel rods span
+  between a pair of brackets and spools rest in the valley between the
+  rods, so any spool lifts straight out (and can roll as filament feeds)
+  without ever touching the rods. Print two per shelf level.
+- "gauge": just the hook plate. A ~20 minute print that verifies slot
+  width, vertical pitch, column spacing, throat depth, and engagement on
+  the real DuraFrame before committing to full brackets.
+- "coupon": a thin slice of the two-saddle arm tip (no hooks). Verifies the
+  rod pocket diameter, drop-in opening, and rod spacing against the real
+  pipe/dowel for a few grams of plastic.
 
 Geometry lives in the XZ plane (X forward from the upright face, Z up) and is
 symmetric about Y=0, so every extrude is a full-length symmetric extent and
-the same part serves left and right ends of the rod.
+the same part serves left and right ends of the rods.
 
 Measured on the desk (2026-09-02): slots ~3/4" tall and ~1/8" wide, on 1"
 vertical pitch, two slot columns per upright ~1" apart. Slot width, column
@@ -55,23 +61,32 @@ PLATE_THICKNESS = 6.0
 PLATE_HEIGHT = 76.0
 BRACKET_WIDTH = 40.0  # spans both slot columns at +/-12.7 with margin
 GAUGE_PLATE_THICKNESS = 5.0
+COUPON_WIDTH = 8.0
 TOP_HOOK_NECK_TOP = 74.0  # top row 2 mm below the plate top
 
-# --- Rod and saddle --------------------------------------------------------
+# --- Rods and saddles ------------------------------------------------------
 ROD_OUTER_DIAMETER = 33.4  # 1" schedule 40 PVC; edit for dowel etc.
 SADDLE_CLEARANCE = 0.8  # diametral pocket clearance
 SADDLE_WALL = 6.0
-ROD_STANDOFF = 115.0  # rod axis forward of the upright face; a 200 mm
-# spool hanging on the rod then clears the upright face by ~15 mm.
-ROD_CENTER_Z = PLATE_HEIGHT  # rod axis level with the plate top
+REAR_ROD_STANDOFF = 70.0  # rear rod axis forward of the upright face
+ROD_SPACING = 80.0  # centre-to-centre between the two rods
+# A 200 mm spool resting on both rods sits at a ~20 degree contact
+# half-angle, its centre midway between the rods, so its rearmost point
+# clears the upright face by (REAR_ROD_STANDOFF + ROD_SPACING/2 - 100).
+FRONT_ROD_STANDOFF = REAR_ROD_STANDOFF + ROD_SPACING
+ROD_STANDOFFS = (REAR_ROD_STANDOFF, FRONT_ROD_STANDOFF)
+ROD_CENTER_Z = PLATE_HEIGHT  # both rod axes level with the plate top
+# No rod retainer: spools press the rods down into the saddles and are
+# lifted off the rods, never with them, so nothing ever pulls a rod up.
 
 # --- Lightening cutout -----------------------------------------------------
-MEMBER_WIDTH = 14.0  # structural border left around the triangular cutout
-# There is no rod retainer: the saddle walls rise ~15 mm above the rod axis,
-# the load only ever pushes down, and an open saddle is what lets the rod
-# lift straight out for spool changes. Add velcro over the saddle if bumped.
+MEMBER_WIDTH = 14.0  # structural border left around the cutout
 
-EXPORT_NAME = {"bracket": "spool_rod_bracket", "gauge": "slot_gauge"}
+EXPORT_NAME = {
+    "bracket": "spool_cradle_bracket",
+    "gauge": "slot_gauge",
+    "coupon": "saddle_coupon",
+}
 
 
 def _value(millimetres):
@@ -112,6 +127,14 @@ def _extrude_all_profiles(component, sketch, width_mm, operation, name):
 
 def _hook_row_tops():
     return [TOP_HOOK_NECK_TOP - row * SLOT_PITCH_VERTICAL for row in range(HOOK_ROWS)]
+
+
+def _boss_radius():
+    return ROD_OUTER_DIAMETER / 2.0 + SADDLE_WALL
+
+
+def _pocket_radius():
+    return (ROD_OUTER_DIAMETER + SADDLE_CLEARANCE) / 2.0
 
 
 def _build_hooks(component, plane):
@@ -156,31 +179,72 @@ def _build_hooks(component, plane):
     )
 
 
-def _inner_cutout_vertices():
-    """Triangle cutout offset MEMBER_WIDTH inside plate/top/diagonal members."""
-    inner_x = PLATE_THICKNESS + MEMBER_WIDTH - 6.0  # keep 14 total with plate
-    inner_z = PLATE_HEIGHT - MEMBER_WIDTH
-    # Hypotenuse runs from (0, 0) to (ROD_STANDOFF, PLATE_HEIGHT).
-    length = math.hypot(ROD_STANDOFF, PLATE_HEIGHT)
-    direction = (ROD_STANDOFF / length, PLATE_HEIGHT / length)
+def _add_saddles(component, plane, width_mm):
+    """Join a boss and cut a pocket plus drop-in opening at each rod axis."""
+    join = adsk.fusion.FeatureOperations.JoinFeatureOperation
+    cut = adsk.fusion.FeatureOperations.CutFeatureOperation
+    for rod_x in ROD_STANDOFFS:
+        boss = component.sketches.add(plane)
+        boss.name = f"Saddle boss x={rod_x:.0f}"
+        boss.sketchCurves.sketchCircles.addByCenterRadius(
+            _point(rod_x, ROD_CENTER_Z), _boss_radius() * MM
+        )
+        _extrude_all_profiles(component, boss, width_mm, join, boss.name)
+    for rod_x in ROD_STANDOFFS:
+        pocket = component.sketches.add(plane)
+        pocket.name = f"Rod pocket x={rod_x:.0f}"
+        pocket.sketchCurves.sketchCircles.addByCenterRadius(
+            _point(rod_x, ROD_CENTER_Z), _pocket_radius() * MM
+        )
+        _extrude_all_profiles(component, pocket, width_mm + 10.0, cut, pocket.name)
+        opening = component.sketches.add(plane)
+        opening.name = f"Drop-in opening x={rod_x:.0f}"
+        _add_polygon(
+            opening,
+            [
+                (rod_x - _pocket_radius(), ROD_CENTER_Z),
+                (rod_x + _pocket_radius(), ROD_CENTER_Z),
+                (rod_x + _pocket_radius(), ROD_CENTER_Z + _boss_radius() + 5.0),
+                (rod_x - _pocket_radius(), ROD_CENTER_Z + _boss_radius() + 5.0),
+            ],
+        )
+        _extrude_all_profiles(component, opening, width_mm + 10.0, cut, opening.name)
+
+
+def _diagonal_offset_z(x_mm):
+    """Z of the hypotenuse offset MEMBER_WIDTH into the part, at x_mm.
+
+    The hypotenuse runs from (0, 0) to (FRONT_ROD_STANDOFF, PLATE_HEIGHT).
+    """
+    length = math.hypot(FRONT_ROD_STANDOFF, PLATE_HEIGHT)
+    direction = (FRONT_ROD_STANDOFF / length, PLATE_HEIGHT / length)
     normal = (-direction[1], direction[0])  # points up-left, into the part
     base = (MEMBER_WIDTH * normal[0], MEMBER_WIDTH * normal[1])
     slope = direction[1] / direction[0]
-    # Offset hypotenuse as z = slope * (x - base_x) + base_z.
-    z_at_inner_x = slope * (inner_x - base[0]) + base[1]
-    x_at_inner_z = base[0] + (inner_z - base[1]) / slope
-    if x_at_inner_z <= inner_x + 5.0:
+    return slope * (x_mm - base[0]) + base[1]
+
+
+def _inner_cutout_vertices():
+    """Cutout inside the plate/top/diagonal members, stopping short of the
+    rear saddle boss so the boss keeps MEMBER_WIDTH-ish of web around it."""
+    inner_x = PLATE_THICKNESS + MEMBER_WIDTH - 6.0  # keep 14 total with plate
+    inner_z = PLATE_HEIGHT - MEMBER_WIDTH
+    max_x = REAR_ROD_STANDOFF - _boss_radius() - 10.0
+    if max_x <= inner_x + 5.0:
         return None  # cutout would be degenerate; skip it
+    z_left = _diagonal_offset_z(inner_x)
+    z_right = _diagonal_offset_z(max_x)
+    if z_right >= inner_z:
+        return None
     return [
-        (inner_x, z_at_inner_x),
+        (inner_x, z_left),
         (inner_x, inner_z),
-        (x_at_inner_z, inner_z),
+        (max_x, inner_z),
+        (max_x, z_right),
     ]
 
 
 def _build_bracket_body(component, plane):
-    boss_radius = ROD_OUTER_DIAMETER / 2.0 + SADDLE_WALL
-    pocket_radius = (ROD_OUTER_DIAMETER + SADDLE_CLEARANCE) / 2.0
     join = adsk.fusion.FeatureOperations.JoinFeatureOperation
     cut = adsk.fusion.FeatureOperations.CutFeatureOperation
     new_body = adsk.fusion.FeatureOperations.NewBodyFeatureOperation
@@ -189,7 +253,7 @@ def _build_bracket_body(component, plane):
     triangle.name = "Arm triangle"
     _add_polygon(
         triangle,
-        [(0.0, 0.0), (0.0, PLATE_HEIGHT), (ROD_STANDOFF, PLATE_HEIGHT)],
+        [(0.0, 0.0), (0.0, PLATE_HEIGHT), (FRONT_ROD_STANDOFF, PLATE_HEIGHT)],
     )
     _extrude_all_profiles(component, triangle, BRACKET_WIDTH, new_body, "Arm triangle")
 
@@ -206,13 +270,6 @@ def _build_bracket_body(component, plane):
     )
     _extrude_all_profiles(component, plate, BRACKET_WIDTH, join, "Hook plate")
 
-    boss = component.sketches.add(plane)
-    boss.name = "Saddle boss"
-    boss.sketchCurves.sketchCircles.addByCenterRadius(
-        _point(ROD_STANDOFF, ROD_CENTER_Z), boss_radius * MM
-    )
-    _extrude_all_profiles(component, boss, BRACKET_WIDTH, join, "Saddle boss")
-
     cutout_vertices = _inner_cutout_vertices()
     if cutout_vertices:
         cutout = component.sketches.add(plane)
@@ -226,31 +283,30 @@ def _build_bracket_body(component, plane):
             "Lightening cutout",
         )
 
-    pocket = component.sketches.add(plane)
-    pocket.name = "Rod pocket"
-    pocket.sketchCurves.sketchCircles.addByCenterRadius(
-        _point(ROD_STANDOFF, ROD_CENTER_Z), pocket_radius * MM
-    )
-    _extrude_all_profiles(component, pocket, BRACKET_WIDTH + 10.0, cut, "Rod pocket")
+    _add_saddles(component, plane, BRACKET_WIDTH)
 
-    opening = component.sketches.add(plane)
-    opening.name = "Rod drop-in opening"
+
+def _build_coupon_body(component, plane):
+    """Thin slice of the two-saddle arm tip: a chord joining both bosses."""
+    chord = component.sketches.add(plane)
+    chord.name = "Coupon chord"
     _add_polygon(
-        opening,
+        chord,
         [
-            (ROD_STANDOFF - pocket_radius, ROD_CENTER_Z),
-            (ROD_STANDOFF + pocket_radius, ROD_CENTER_Z),
-            (ROD_STANDOFF + pocket_radius, ROD_CENTER_Z + boss_radius + 5.0),
-            (ROD_STANDOFF - pocket_radius, ROD_CENTER_Z + boss_radius + 5.0),
+            (REAR_ROD_STANDOFF, PLATE_HEIGHT - MEMBER_WIDTH),
+            (FRONT_ROD_STANDOFF, PLATE_HEIGHT - MEMBER_WIDTH),
+            (FRONT_ROD_STANDOFF, PLATE_HEIGHT),
+            (REAR_ROD_STANDOFF, PLATE_HEIGHT),
         ],
     )
     _extrude_all_profiles(
         component,
-        opening,
-        BRACKET_WIDTH + 10.0,
-        cut,
-        "Rod drop-in opening",
+        chord,
+        COUPON_WIDTH,
+        adsk.fusion.FeatureOperations.NewBodyFeatureOperation,
+        "Coupon chord",
     )
+    _add_saddles(component, plane, COUPON_WIDTH)
 
 
 def _build_gauge_body(component, plane):
@@ -279,17 +335,14 @@ def _probe(body, x_mm, y_mm, z_mm):
     return body.pointContainment(point)
 
 
-def _verify(body):  # pylint: disable=too-many-locals
-    """Numeric probes; raise on any surprise so the failure is loud."""
-    inside = adsk.fusion.PointContainment.PointInsidePointContainment
-    outside = adsk.fusion.PointContainment.PointOutsidePointContainment
+def _hook_checks(inside, outside):
     column = SLOT_COLUMN_SPACING / 2.0
     neck_top = _hook_row_tops()[0]
     lip_mid_z = neck_top - HOOK_NECK_HEIGHT - HOOK_LIP_DROP / 2.0
     lip_mid_x = -(HOOK_THROAT + HOOK_LIP_THICKNESS / 2.0)
     inner_tab_edge = column - HOOK_TAB_WIDTH
     outer_tab_edge = column + HOOK_TAB_WIDTH
-    checks = [
+    return [
         ("plate interior", 3.0, 0.0, 38.0, inside),
         ("top lip, +Y column", lip_mid_x, column, lip_mid_z, inside),
         ("top lip, -Y column", lip_mid_x, -column, lip_mid_z, inside),
@@ -298,36 +351,47 @@ def _verify(body):  # pylint: disable=too-many-locals
         ("no hook inboard of tab", lip_mid_x, inner_tab_edge, lip_mid_z, outside),
         ("no hook outboard of tab", lip_mid_x, outer_tab_edge, lip_mid_z, outside),
     ]
-    if BUILD_VARIANT == "bracket":
-        pocket_radius = (ROD_OUTER_DIAMETER + SADDLE_CLEARANCE) / 2.0
-        boss_radius = ROD_OUTER_DIAMETER / 2.0 + SADDLE_WALL
-        wall_mid = (pocket_radius + boss_radius) / 2.0
+
+
+def _saddle_checks(inside, outside):
+    wall_mid = (_pocket_radius() + _boss_radius()) / 2.0
+    floor_mid_z = ROD_CENTER_Z - (_pocket_radius() + _boss_radius()) / 2.0
+    checks = []
+    for label, rod_x in (("rear", REAR_ROD_STANDOFF), ("front", FRONT_ROD_STANDOFF)):
         checks += [
-            ("rod pocket is empty", ROD_STANDOFF, 0.0, ROD_CENTER_Z, outside),
+            (f"{label} pocket is empty", rod_x, 0.0, ROD_CENTER_Z, outside),
             (
-                "drop-in opening is open",
-                ROD_STANDOFF,
+                f"{label} opening is open",
+                rod_x,
                 0.0,
-                ROD_CENTER_Z + boss_radius,
+                ROD_CENTER_Z + _boss_radius(),
                 outside,
             ),
-            (
-                "front saddle wall",
-                ROD_STANDOFF + wall_mid,
-                0.0,
-                ROD_CENTER_Z,
-                inside,
-            ),
-            (
-                "rear saddle wall",
-                ROD_STANDOFF - wall_mid,
-                0.0,
-                ROD_CENTER_Z,
-                inside,
-            ),
-            ("lightening cutout", 45.0, 0.0, 55.0, outside),
-            ("diagonal member", 30.0, 0.0, 25.0, inside),
-            ("top member", 60.0, 0.0, PLATE_HEIGHT - 4.0, inside),
+            (f"{label} fore wall", rod_x + wall_mid, 0.0, ROD_CENTER_Z, inside),
+            (f"{label} aft wall", rod_x - wall_mid, 0.0, ROD_CENTER_Z, inside),
+            (f"{label} pocket floor", rod_x, 0.0, floor_mid_z, inside),
+        ]
+    between_bays = (REAR_ROD_STANDOFF + FRONT_ROD_STANDOFF) / 2.0
+    checks.append(
+        ("chord between saddles", between_bays, 0.0, PLATE_HEIGHT - 6.0, inside)
+    )
+    return checks
+
+
+def _verify(body):
+    """Numeric probes; raise on any surprise so the failure is loud."""
+    inside = adsk.fusion.PointContainment.PointInsidePointContainment
+    outside = adsk.fusion.PointContainment.PointOutsidePointContainment
+    checks = []
+    if BUILD_VARIANT in ("bracket", "gauge"):
+        checks += _hook_checks(inside, outside)
+    if BUILD_VARIANT in ("bracket", "coupon"):
+        checks += _saddle_checks(inside, outside)
+    if BUILD_VARIANT == "bracket":
+        checks += [
+            ("lightening cutout", 25.0, 0.0, 45.0, outside),
+            ("diagonal member", 30.0, 0.0, 22.0, inside),
+            ("top member near plate", 25.0, 0.0, PLATE_HEIGHT - 4.0, inside),
         ]
     failures = []
     for label, x_mm, y_mm, z_mm, expected in checks:
@@ -370,9 +434,12 @@ def run(_context: str):
 
     if BUILD_VARIANT == "bracket":
         _build_bracket_body(component, plane)
+        _build_hooks(component, plane)
+    elif BUILD_VARIANT == "coupon":
+        _build_coupon_body(component, plane)
     else:
         _build_gauge_body(component, plane)
-    _build_hooks(component, plane)
+        _build_hooks(component, plane)
 
     if component.bRepBodies.count != 1:
         names = [
