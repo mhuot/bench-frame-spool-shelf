@@ -20,9 +20,12 @@ symmetric about Y=0, so every extrude is a full-length symmetric extent and
 the same part serves left and right ends of the rods.
 
 Measured on the desk (2026-09-02): slots ~3/4" tall and ~1/8" wide, on 1"
-vertical pitch, two slot columns per upright ~1" apart. Slot width, column
-spacing, and face metal thickness are the least certain numbers — that is
-what the gauge print is for.
+vertical pitch. Each upright carries ONE slot column; what looks like a
+double track in photos is the two joined frames' uprights sitting side by
+side at the 60" module's centre. The hooks are therefore a single column on
+the bracket centreline, so the same bracket works on centre and outside
+uprights alike. Slot width and face metal thickness are the least certain
+numbers — that is what the gauge print is for.
 """
 
 import math
@@ -44,25 +47,28 @@ PROJECT_DIR = "/Users/mhuot/lan-spool-shelf"
 SLOT_HEIGHT = 19.05  # 3/4", measured
 SLOT_PITCH_VERTICAL = 25.4  # 1" centre-to-centre, measured
 SLOT_WIDTH = 3.2  # ~1/8", from photo — gauge print confirms
-SLOT_COLUMN_SPACING = 25.4  # ~1" between the two columns — gauge confirms
 FACE_METAL_THICKNESS = 2.0  # assumed — gauge confirms via throat fit
 
 # --- Hook geometry ---------------------------------------------------------
+# A single column of hook blades on the bracket centreline: each upright has
+# only one slot column (the "double track" is just the two joined frames'
+# columns meeting at the module centre), and a one-column bracket mounts on
+# any of them. Four rows because that lone column carries the whole moment.
 HOOK_TAB_WIDTH = 2.4  # blade width through the slot (0.8 clearance)
 HOOK_THROAT = FACE_METAL_THICKNESS + 0.8  # gap behind plate for the face metal
 HOOK_NECK_HEIGHT = 5.0  # bears on the slot's bottom edge
-HOOK_LIP_THICKNESS = 4.0
+HOOK_LIP_THICKNESS = 4.5
 HOOK_LIP_DROP = 12.0  # engagement below the neck, behind the face
-HOOK_ROWS = 3
+HOOK_ROWS = 4
 # Insertion needs NECK + DROP < SLOT_HEIGHT - play; 5 + 12 = 17 < 19.05.
 
 # --- Bracket body ----------------------------------------------------------
 PLATE_THICKNESS = 6.0
-PLATE_HEIGHT = 76.0
-BRACKET_WIDTH = 40.0  # spans both slot columns at +/-12.7 with margin
+PLATE_HEIGHT = 90.0  # spans the 4 hook rows; also the arm/rod height
+BRACKET_WIDTH = 40.0  # face bearing width against the upright
 GAUGE_PLATE_THICKNESS = 5.0
 COUPON_WIDTH = 8.0
-TOP_HOOK_NECK_TOP = 74.0  # top row 2 mm below the plate top
+TOP_HOOK_NECK_TOP = 88.0  # top row 2 mm below the plate top
 
 # --- Rods and saddles ------------------------------------------------------
 ROD_OUTER_DIAMETER = 33.4  # 1" schedule 40 PVC; edit for dowel etc.
@@ -138,12 +144,10 @@ def _pocket_radius():
 
 
 def _build_hooks(component, plane):
-    """Two hook columns at +/- SLOT_COLUMN_SPACING/2, built sign-proof.
+    """One column of hook blades on the centreline (y = 0).
 
-    Extrude direction signs on offset extents depend on the sketch plane's
-    normal, so instead: join one symmetric slab spanning both columns, then
-    cut the symmetric middle back out. What remains is exactly one tab per
-    column, HOOK_TAB_WIDTH wide, centred at +/- SLOT_COLUMN_SPACING/2.
+    A single symmetric extrude of HOOK_TAB_WIDTH is inherently centred, so
+    no extent-direction signs are involved at all.
     """
     sketch = component.sketches.add(plane)
     sketch.name = "Hook profiles"
@@ -166,16 +170,9 @@ def _build_hooks(component, plane):
     _extrude_all_profiles(
         component,
         sketch,
-        SLOT_COLUMN_SPACING + HOOK_TAB_WIDTH,
+        HOOK_TAB_WIDTH,
         adsk.fusion.FeatureOperations.JoinFeatureOperation,
-        "Hook slab",
-    )
-    _extrude_all_profiles(
-        component,
-        sketch,
-        SLOT_COLUMN_SPACING - HOOK_TAB_WIDTH,
-        adsk.fusion.FeatureOperations.CutFeatureOperation,
-        "Hook column split",
+        "Hook column",
     )
 
 
@@ -336,21 +333,21 @@ def _probe(body, x_mm, y_mm, z_mm):
 
 
 def _hook_checks(inside, outside):
-    column = SLOT_COLUMN_SPACING / 2.0
-    neck_top = _hook_row_tops()[0]
-    lip_mid_z = neck_top - HOOK_NECK_HEIGHT - HOOK_LIP_DROP / 2.0
-    lip_mid_x = -(HOOK_THROAT + HOOK_LIP_THICKNESS / 2.0)
-    inner_tab_edge = column - HOOK_TAB_WIDTH
-    outer_tab_edge = column + HOOK_TAB_WIDTH
-    return [
-        ("plate interior", 3.0, 0.0, 38.0, inside),
-        ("top lip, +Y column", lip_mid_x, column, lip_mid_z, inside),
-        ("top lip, -Y column", lip_mid_x, -column, lip_mid_z, inside),
-        ("throat gap is open", -HOOK_THROAT / 2.0, column, lip_mid_z, outside),
-        ("no hook between columns", lip_mid_x, 0.0, lip_mid_z, outside),
-        ("no hook inboard of tab", lip_mid_x, inner_tab_edge, lip_mid_z, outside),
-        ("no hook outboard of tab", lip_mid_x, outer_tab_edge, lip_mid_z, outside),
+    lip_mid_z_rows = [
+        top - HOOK_NECK_HEIGHT - HOOK_LIP_DROP / 2.0 for top in _hook_row_tops()
     ]
+    lip_mid_x = -(HOOK_THROAT + HOOK_LIP_THICKNESS / 2.0)
+    beside_tab = HOOK_TAB_WIDTH  # clear of the +/- HOOK_TAB_WIDTH/2 blade
+    checks = [("plate interior", 3.0, 0.0, 38.0, inside)]
+    for row, lip_mid_z in enumerate(lip_mid_z_rows):
+        checks.append((f"row {row} lip", lip_mid_x, 0.0, lip_mid_z, inside))
+    top_lip_z = lip_mid_z_rows[0]
+    checks += [
+        ("throat gap is open", -HOOK_THROAT / 2.0, 0.0, top_lip_z, outside),
+        ("no hook beside blade +Y", lip_mid_x, beside_tab, top_lip_z, outside),
+        ("no hook beside blade -Y", lip_mid_x, -beside_tab, top_lip_z, outside),
+    ]
+    return checks
 
 
 def _saddle_checks(inside, outside):

@@ -21,14 +21,17 @@ hardware; the brackets hook in like Ergotron's own shelves.
 ## Fit check workflow
 
 The upright slot geometry was measured by hand (3/4" tall slots, 1" vertical
-pitch, ~1/8" wide, two columns ~1" apart) and three numbers are still
-assumptions: slot width, column spacing, and face metal thickness.
+pitch, ~1/8" wide). Each upright carries a single slot column — the "double
+track" at the middle of the 60" module is just the two joined frames'
+columns sitting side by side — so the bracket hooks one column with a
+single centred blade column, four rows tall, and mounts on any upright.
+Two numbers are still assumptions: slot width and face metal thickness.
 
 1. Print `slot_gauge.stl` flat on its side and hook it into the upright:
-   both tab columns should enter their slots, drop ~14 mm, and sit flush
-   with no rock. If it binds or rattles, edit `SLOT_WIDTH`,
-   `SLOT_COLUMN_SPACING`, or `FACE_METAL_THICKNESS` at the top of
-   `scripts/build_rod_bracket.py`, rebuild, re-print.
+   the blade column should enter its slots, drop ~14 mm, and sit flush
+   with no rock. If it binds or rattles, edit `SLOT_WIDTH` or
+   `FACE_METAL_THICKNESS` at the top of `scripts/build_rod_bracket.py`,
+   rebuild, re-print.
 2. Print `saddle_coupon.stl` and drop your actual rod stock into both
    pockets: it should seat fully and lift out without force. Adjust
    `ROD_OUTER_DIAMETER` / `SADDLE_CLEARANCE` if not.
@@ -54,10 +57,18 @@ assumptions: slot width, column spacing, and face metal thickness.
 - Lie the bracket on its flat side (rod axes vertical in the slicer), so
   the layer planes coincide with the loaded plane. **Do not print it
   upright** — that puts every layer seam across the hook lips.
-- PETG or PLA+, 4+ perimeters, 40 % infill or more.
+- **Material: PETG.** The hooks live under constant tension, so the two
+  failure modes that matter are creep and brittle fracture. PLA/PLA+
+  creeps under sustained load; CF blends are stiff but brittle in exactly
+  the thin blade sections that must not snap; ABS/ASA are fine mechanically
+  but warp-prone on a part this long on an open-frame printer, and ASA's
+  UV advantage buys nothing in a basement. PETG is ductile, creep-resistant
+  enough at basement temperatures, and prints flat. ASA works if printed
+  enclosed.
+- 4+ perimeters, 40 % infill or more.
 - Load rating: sized for ~6 kg per bracket (a full level of spools is
-  ~10 kg across two brackets; the top hook row sees ~100 N of tension at
-  that load, roughly a 2x margin in PETG).
+  ~10 kg across two brackets; the single hook column sees ~90 N of tension
+  at the top row at that load, about a 2x margin in PETG).
 
 ## Rebuilding
 
