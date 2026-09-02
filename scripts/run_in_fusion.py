@@ -7,8 +7,8 @@ Usage:
 
 The MCP server (http://127.0.0.1:27182/mcp) executes the script text inside
 Fusion's long-lived Python interpreter, calling its `run(context)` entry
-point. `--variant` injects `BUILD_VARIANT = "<value>"` ahead of the script
-text; the build script picks it up via `globals().get(...)`.
+point. `--variant` appends `BUILD_VARIANT = "<value>"` after the script
+text so it overrides the script's own default assignment.
 
 Standard library only — no venv needed for this one.
 """
@@ -91,7 +91,10 @@ def main():
 
     script_text = arguments.script_path.read_text()
     if arguments.variant:
-        script_text = f'BUILD_VARIANT = "{arguments.variant}"\n' + script_text
+        # Appended, not prepended: the script assigns its own default at
+        # import time, and Fusion's persistent globals make prepending
+        # unreliable anyway. run() is only called after the full text runs.
+        script_text += f'\nBUILD_VARIANT = "{arguments.variant}"\n'
 
     result = run_script_text(script_text)
     try:
@@ -101,6 +104,7 @@ def main():
         sys.exit(1)
     print(inner.get("message", ""))
     if not inner.get("success", False):
+        print(inner.get("error", "(no error text)"), file=sys.stderr)
         print("--- script FAILED ---", file=sys.stderr)
         sys.exit(1)
 

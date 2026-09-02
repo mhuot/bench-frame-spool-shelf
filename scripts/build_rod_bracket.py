@@ -26,7 +26,11 @@ import adsk.fusion
 
 MM = 0.1  # Fusion API lengths are centimetres
 
-BUILD_VARIANT = globals().get("BUILD_VARIANT", "bracket")
+# Assigned unconditionally: Fusion's interpreter persists globals between
+# MCP executions, so a globals().get(...) default silently reuses the
+# variant injected by a PREVIOUS run. run_in_fusion.py --variant overrides
+# this by appending a reassignment AFTER the script text.
+BUILD_VARIANT = "bracket"
 
 PROJECT_DIR = "/Users/mhuot/lan-spool-shelf"
 
@@ -75,8 +79,13 @@ def _value(millimetres):
 
 
 def _point(x_mm, z_mm):
-    """Sketch point on the XZ plane (sketch u -> model X, v -> model Z)."""
-    return adsk.core.Point3D.create(x_mm * MM, z_mm * MM, 0)
+    """Sketch point on the XZ plane.
+
+    On xZConstructionPlane the sketch x axis is model X but the sketch
+    y axis is model MINUS Z (verified by probe failure: a +76 tall part
+    landed at model z [-76, 0]). Negate v so callers think in model Z.
+    """
+    return adsk.core.Point3D.create(x_mm * MM, -z_mm * MM, 0)
 
 
 def _add_polygon(sketch, points_mm):
@@ -357,7 +366,6 @@ def run(_context: str):
     document = app.documents.add(adsk.core.DocumentTypes.FusionDesignDocumentType)
     design = adsk.fusion.Design.cast(app.activeProduct)
     component = design.rootComponent
-    component.name = EXPORT_NAME[BUILD_VARIANT]
     plane = component.xZConstructionPlane
 
     if BUILD_VARIANT == "bracket":
