@@ -57,14 +57,13 @@ Two numbers are still assumptions: slot width and face metal thickness.
 - Lie the bracket on its flat side (rod axes vertical in the slicer), so
   the layer planes coincide with the loaded plane. **Do not print it
   upright** — that puts every layer seam across the hook lips.
-- **Material: PETG.** The hooks live under constant tension, so the two
-  failure modes that matter are creep and brittle fracture. PLA/PLA+
-  creeps under sustained load; CF blends are stiff but brittle in exactly
-  the thin blade sections that must not snap; ABS/ASA are fine mechanically
-  but warp-prone on a part this long on an open-frame printer, and ASA's
-  UV advantage buys nothing in a basement. PETG is ductile, creep-resistant
-  enough at basement temperatures, and prints flat. ASA works if printed
-  enclosed.
+- **Material: ASA on the Core One Plus** (enclosed, so warp is handled);
+  PETG is the runner-up and completely adequate. The hooks live under
+  constant tension, so the failure modes that matter are creep and brittle
+  fracture: ASA creeps less than PETG over months under load and stays
+  ductile; PLA/PLA+ creeps too much; CF blends are stiff but brittle in
+  exactly the thin blade sections that must not snap. The 180 mm part fits
+  the 250 x 220 bed lying on its side with room to spare.
 - 4+ perimeters, 40 % infill or more.
 - Load rating: sized for ~6 kg per bracket (a full level of spools is
   ~10 kg across two brackets; the single hook column sees ~90 N of tension
