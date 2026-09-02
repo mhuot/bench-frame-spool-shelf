@@ -11,6 +11,13 @@ right hand.
 - `scripts/build_rod_bracket.py` builds every printed part. All dimensions
   live at the top of that one file — there is deliberately no shared params
   module (see the module-caching trap in the fusion-360-mcp skill).
+- The builds land in the Fusion cloud project **"LAN Spool Shelf"** as
+  saved documents "Spool Cradle Bracket", "Slot Gauge", "Saddle Coupon";
+  each scripted run saves a new version of the matching document. The
+  documents are build artifacts: the script is the source of truth, and
+  only the width user parameters (marked as driving in their comments) are
+  wired into features. dataFile.versionNumber reads stale right after
+  save(), so don't trust it in-run.
 - The Ergotron order guide (870-03-006) is `docs/03-006_obsolete.pdf`. It has
   frame widths and capacities but NOT slot geometry.
 - Slot geometry was measured on the actual desk: **3/4" tall slots on 1"

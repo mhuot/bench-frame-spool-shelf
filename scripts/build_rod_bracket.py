@@ -1,7 +1,11 @@
 """Fusion 360 script: spool cradle bracket for the Ergotron LAN Organizer 3000.
 
-Run inside Fusion via scripts/run_in_fusion.py. Builds one printable body in
-a new unsaved parametric document and exports STL/STEP/F3D. Three variants:
+Run inside Fusion via scripts/run_in_fusion.py. Builds one printable body
+into a saved, versioned document in the "LAN Spool Shelf" Fusion cloud
+project (created on first run; every rebuild saves a new version of the
+same document) and exports STL/STEP/F3D. Each document carries a user
+parameter table mirroring the constants below — extrude widths are driven
+by parameters, profile geometry is script-driven. Three variants:
 
 - "bracket" (default): full cradle bracket — slotted-upright hooks and a
   cantilever arm carrying TWO up-open saddles. Two parallel rods span
@@ -28,6 +32,7 @@ uprights alike. Slot width and face metal thickness are the least certain
 numbers — that is what the gauge print is for.
 """
 
+import datetime
 import math
 
 import adsk.core
@@ -98,6 +103,50 @@ EXPORT_NAME = {
     "coupon": "saddle_coupon",
 }
 
+# --- Saved documents --------------------------------------------------------
+# Each variant is saved as a named document in this Fusion cloud project.
+# Every scripted rebuild saves a NEW VERSION of the same document (with a
+# description recording the key dimensions), so Fusion's version history is
+# the model's history. The script remains the source of truth for profile
+# geometry; the document's parameter table mirrors it.
+FUSION_PROJECT_NAME = "LAN Spool Shelf"
+DOC_NAME = {
+    "bracket": "Spool Cradle Bracket",
+    "gauge": "Slot Gauge",
+    "coupon": "Saddle Coupon",
+}
+
+_DRIVING = "drives the model; safe to edit live in Fusion"
+_REFERENCE = "reference only — edit scripts/build_rod_bracket.py and rebuild"
+# User parameters written into every document. Only the extrude widths are
+# wired into features (they are orthogonal to the sketch profiles, so a live
+# edit stays self-consistent); everything else is reference documentation,
+# because profile vertices are computed by the script and a live edit of,
+# say, rodOuterDiameter would resize the pocket circles but not the drop-in
+# opening polygons, leaving silently inconsistent geometry.
+PARAMETERS = {
+    "bracketWidth": (BRACKET_WIDTH, _DRIVING),
+    "couponWidth": (COUPON_WIDTH, _DRIVING),
+    "hookTabWidth": (HOOK_TAB_WIDTH, _DRIVING),
+    "slotHeight": (SLOT_HEIGHT, _REFERENCE),
+    "slotPitchVertical": (SLOT_PITCH_VERTICAL, _REFERENCE),
+    "slotWidth": (SLOT_WIDTH, _REFERENCE),
+    "faceMetalThickness": (FACE_METAL_THICKNESS, _REFERENCE),
+    "hookThroat": (HOOK_THROAT, _REFERENCE),
+    "hookNeckHeight": (HOOK_NECK_HEIGHT, _REFERENCE),
+    "hookLipThickness": (HOOK_LIP_THICKNESS, _REFERENCE),
+    "hookLipDrop": (HOOK_LIP_DROP, _REFERENCE),
+    "plateThickness": (PLATE_THICKNESS, _REFERENCE),
+    "plateHeight": (PLATE_HEIGHT, _REFERENCE),
+    "gaugePlateThickness": (GAUGE_PLATE_THICKNESS, _REFERENCE),
+    "rodOuterDiameter": (ROD_OUTER_DIAMETER, _REFERENCE),
+    "saddleClearance": (SADDLE_CLEARANCE, _REFERENCE),
+    "saddleWall": (SADDLE_WALL, _REFERENCE),
+    "rearRodStandoff": (REAR_ROD_STANDOFF, _REFERENCE),
+    "rodSpacing": (ROD_SPACING, _REFERENCE),
+    "memberWidth": (MEMBER_WIDTH, _REFERENCE),
+}
+
 
 def _value(millimetres):
     return adsk.core.ValueInput.createByReal(millimetres * MM)
@@ -122,14 +171,28 @@ def _add_polygon(sketch, points_mm):
         lines.addByTwoPoints(start, end)
 
 
-def _extrude_all_profiles(component, sketch, width_mm, operation, name):
+def _width_input(width):
+    """A ValueInput from either mm (float) or a parameter expression (str)."""
+    if isinstance(width, str):
+        return adsk.core.ValueInput.createByString(width)
+    return _value(width)
+
+
+def _widened(width):
+    """The width plus 10 mm, for cuts that must clear the solid's faces."""
+    if isinstance(width, str):
+        return f"{width} + 10 mm"
+    return width + 10.0
+
+
+def _extrude_all_profiles(component, sketch, width, operation, name):
     """Symmetric full-length extrude of every profile in the sketch."""
     profiles = adsk.core.ObjectCollection.create()
     for index in range(sketch.profiles.count):
         profiles.add(sketch.profiles.item(index))
     extrudes = component.features.extrudeFeatures
     extrude_input = extrudes.createInput(profiles, operation)
-    extrude_input.setSymmetricExtent(_value(width_mm), True)
+    extrude_input.setSymmetricExtent(_width_input(width), True)
     feature = extrudes.add(extrude_input)
     feature.name = name
     return feature
@@ -174,13 +237,13 @@ def _build_hooks(component, plane):
     _extrude_all_profiles(
         component,
         sketch,
-        HOOK_TAB_WIDTH,
+        "hookTabWidth",
         adsk.fusion.FeatureOperations.JoinFeatureOperation,
         "Hook column",
     )
 
 
-def _add_saddles(component, plane, width_mm):
+def _add_saddles(component, plane, width):
     """Join a boss and cut a pocket plus drop-in opening at each rod axis."""
     join = adsk.fusion.FeatureOperations.JoinFeatureOperation
     cut = adsk.fusion.FeatureOperations.CutFeatureOperation
@@ -190,14 +253,14 @@ def _add_saddles(component, plane, width_mm):
         boss.sketchCurves.sketchCircles.addByCenterRadius(
             _point(rod_x, ROD_CENTER_Z), _boss_radius() * MM
         )
-        _extrude_all_profiles(component, boss, width_mm, join, boss.name)
+        _extrude_all_profiles(component, boss, width, join, boss.name)
     for rod_x in ROD_STANDOFFS:
         pocket = component.sketches.add(plane)
         pocket.name = f"Rod pocket x={rod_x:.0f}"
         pocket.sketchCurves.sketchCircles.addByCenterRadius(
             _point(rod_x, ROD_CENTER_Z), _pocket_radius() * MM
         )
-        _extrude_all_profiles(component, pocket, width_mm + 10.0, cut, pocket.name)
+        _extrude_all_profiles(component, pocket, _widened(width), cut, pocket.name)
         opening = component.sketches.add(plane)
         opening.name = f"Drop-in opening x={rod_x:.0f}"
         _add_polygon(
@@ -209,7 +272,7 @@ def _add_saddles(component, plane, width_mm):
                 (rod_x - _pocket_radius(), ROD_CENTER_Z + _boss_radius() + 5.0),
             ],
         )
-        _extrude_all_profiles(component, opening, width_mm + 10.0, cut, opening.name)
+        _extrude_all_profiles(component, opening, _widened(width), cut, opening.name)
 
 
 def _diagonal_offset_z(x_mm):
@@ -256,7 +319,7 @@ def _build_bracket_body(component, plane):
         triangle,
         [(0.0, 0.0), (0.0, PLATE_HEIGHT), (FRONT_ROD_STANDOFF, PLATE_HEIGHT)],
     )
-    _extrude_all_profiles(component, triangle, BRACKET_WIDTH, new_body, "Arm triangle")
+    _extrude_all_profiles(component, triangle, "bracketWidth", new_body, "Arm triangle")
 
     plate = component.sketches.add(plane)
     plate.name = "Hook plate"
@@ -269,7 +332,7 @@ def _build_bracket_body(component, plane):
             (0.0, PLATE_HEIGHT),
         ],
     )
-    _extrude_all_profiles(component, plate, BRACKET_WIDTH, join, "Hook plate")
+    _extrude_all_profiles(component, plate, "bracketWidth", join, "Hook plate")
 
     cutout_vertices = _inner_cutout_vertices()
     if cutout_vertices:
@@ -279,12 +342,12 @@ def _build_bracket_body(component, plane):
         _extrude_all_profiles(
             component,
             cutout,
-            BRACKET_WIDTH + 10.0,
+            _widened("bracketWidth"),
             cut,
             "Lightening cutout",
         )
 
-    _add_saddles(component, plane, BRACKET_WIDTH)
+    _add_saddles(component, plane, "bracketWidth")
 
 
 def _build_coupon_body(component, plane):
@@ -303,11 +366,11 @@ def _build_coupon_body(component, plane):
     _extrude_all_profiles(
         component,
         chord,
-        COUPON_WIDTH,
+        "couponWidth",
         adsk.fusion.FeatureOperations.NewBodyFeatureOperation,
         "Coupon chord",
     )
-    _add_saddles(component, plane, COUPON_WIDTH)
+    _add_saddles(component, plane, "couponWidth")
 
 
 def _build_gauge_body(component, plane):
@@ -325,7 +388,7 @@ def _build_gauge_body(component, plane):
     _extrude_all_profiles(
         component,
         plate,
-        BRACKET_WIDTH,
+        "bracketWidth",
         adsk.fusion.FeatureOperations.NewBodyFeatureOperation,
         "Gauge plate",
     )
@@ -423,13 +486,93 @@ def _export(design, name):
     print(f"exported {stl_path}")
 
 
+def _fusion_project(app):
+    """Find or create the Fusion cloud project the documents live in."""
+    projects = app.data.dataProjects
+    for index in range(projects.count):
+        if projects.item(index).name == FUSION_PROJECT_NAME:
+            return projects.item(index)
+    return projects.add(FUSION_PROJECT_NAME)
+
+
+def _existing_data_file(folder, name):
+    """The saved document of this exact name, or None. Ambiguity is fatal."""
+    files = folder.dataFiles
+    hits = [files.item(i) for i in range(files.count) if files.item(i).name == name]
+    if len(hits) > 1:
+        raise RuntimeError(f"{len(hits)} documents named {name!r} in the project")
+    return hits[0] if hits else None
+
+
+def _clear_timeline(design):
+    """Delete every timeline entity so the script can rebuild from scratch.
+
+    Reverse order deletes features before the sketches they consume. User
+    parameters are not timeline entities and survive.
+    """
+    timeline = design.timeline
+    while timeline.count:
+        before = timeline.count
+        timeline.item(timeline.count - 1).entity.deleteMe()
+        if timeline.count >= before:
+            raise RuntimeError(
+                f"timeline item {timeline.item(timeline.count - 1).name!r} "
+                "refused to delete"
+            )
+
+
+def _ensure_parameters(design):
+    """Create or update the document's user parameters from PARAMETERS."""
+    user_parameters = design.userParameters
+    for name, (value_mm, comment) in PARAMETERS.items():
+        expression = f"{value_mm} mm"
+        existing = user_parameters.itemByName(name)
+        if existing:
+            existing.expression = expression
+            existing.comment = comment
+        else:
+            user_parameters.add(
+                name,
+                adsk.core.ValueInput.createByString(expression),
+                "mm",
+                comment,
+            )
+
+
+def _save_version(document, folder, doc_name, freshly_created):
+    """Save the document; each scripted build becomes a new Fusion version."""
+    description = (
+        f"scripted {BUILD_VARIANT} build {datetime.date.today().isoformat()}: "
+        f"slot {SLOT_WIDTH} mm, rod {ROD_OUTER_DIAMETER} mm, "
+        f"width {BRACKET_WIDTH} mm"
+    )
+    if freshly_created:
+        document.saveAs(doc_name, folder, description, "")
+    else:
+        document.save(description)
+    # dataFile.versionNumber reads STALE immediately after save() — the
+    # cloud version increments asynchronously — so do not print it here.
+    print(f"saved '{doc_name}' in project '{FUSION_PROJECT_NAME}': {description}")
+
+
 def run(_context: str):
-    """Build the selected variant in a new document, verify, and export."""
+    """Build the variant into its saved document, verify, export, version."""
     if BUILD_VARIANT not in EXPORT_NAME:
         raise ValueError(f"unknown BUILD_VARIANT {BUILD_VARIANT!r}")
     app = adsk.core.Application.get()
-    document = app.documents.add(adsk.core.DocumentTypes.FusionDesignDocumentType)
+    doc_name = DOC_NAME[BUILD_VARIANT]
+    folder = _fusion_project(app).rootFolder
+    data_file = _existing_data_file(folder, doc_name)
+    if data_file is None:
+        document = app.documents.add(adsk.core.DocumentTypes.FusionDesignDocumentType)
+    else:
+        document = app.documents.open(data_file, True)
     design = adsk.fusion.Design.cast(app.activeProduct)
+    if design is None:
+        raise RuntimeError("active document is not a design")
+    if data_file is not None:
+        _clear_timeline(design)
+    _ensure_parameters(design)
     component = design.rootComponent
     plane = component.xZConstructionPlane
 
@@ -462,4 +605,5 @@ def run(_context: str):
     )
     _verify(body)
     _export(design, EXPORT_NAME[BUILD_VARIANT])
+    _save_version(document, folder, doc_name, freshly_created=data_file is None)
     print("build complete")

@@ -82,9 +82,17 @@ python3 scripts/run_in_fusion.py scripts/build_rod_bracket.py --variant gauge
 python3 scripts/run_in_fusion.py scripts/build_rod_bracket.py --variant coupon
 ```
 
-Each run builds a fresh document, probes the geometry numerically (the run
-fails loudly if any probe misses), and exports the STL, STEP, and F3D
-together. Sanity-check a mesh afterwards with:
+Each run rebuilds the part inside its saved document in the **"LAN Spool
+Shelf" Fusion cloud project** (created automatically), probes the geometry
+numerically (the run fails loudly if any probe misses), exports the STL,
+STEP, and F3D together, and saves a **new Fusion version** of the document
+with a description recording the key dimensions — so the model's history
+lives in Fusion's version list as well as in git. Every document carries a
+user-parameter table mirroring the script constants: the extrude widths
+(`bracketWidth`, `couponWidth`, `hookTabWidth`) actually drive the model
+and are safe to edit live; the rest are marked reference-only because the
+sketch profiles are computed by the script — change those in
+`scripts/build_rod_bracket.py` and rebuild. Sanity-check a mesh afterwards with:
 
 ```sh
 .venv/bin/python scripts/check_stl.py exports/spool_cradle_bracket.stl <mm3 from build output>

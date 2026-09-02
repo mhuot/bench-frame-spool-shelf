@@ -10,7 +10,7 @@ FILE_DESCRIPTION(
 
 FILE_NAME(
 /* name */ 'slot_gauge.step',
-/* time_stamp */ '2026-09-02T15:42:23-05:00',
+/* time_stamp */ '2026-09-02T15:56:31-05:00',
 /* author */ (''),
 /* organization */ (''),
 /* preprocessor_version */ 'ST-DEVELOPER v20.1',
@@ -1074,15 +1074,15 @@ SOLID_ANGLE_UNIT()
 #1021=PRODUCT_DEFINITION_SHAPE('',$,#1024);
 #1022=SHAPE_REPRESENTATION('',(#648),#1014);
 #1023=PRODUCT_DEFINITION_CONTEXT('part definition',#1028,'design');
-#1024=PRODUCT_DEFINITION('2026-09-02-15-42-22-658','(Unsaved)',#1025,#1023);
+#1024=PRODUCT_DEFINITION('2026-09-02-15-56-11-666','Slot Gauge',#1025,#1023);
 #1025=PRODUCT_DEFINITION_FORMATION('',$,#1030);
-#1026=PRODUCT_RELATED_PRODUCT_CATEGORY('(Unsaved)','(Unsaved)',(#1030));
+#1026=PRODUCT_RELATED_PRODUCT_CATEGORY('Slot Gauge','Slot Gauge',(#1030));
 #1027=APPLICATION_PROTOCOL_DEFINITION('international standard',
 'automotive_design',2009,#1028);
 #1028=APPLICATION_CONTEXT(
 'Core Data for Automotive Mechanical Design Process');
 #1029=PRODUCT_CONTEXT('part definition',#1028,'mechanical');
-#1030=PRODUCT('2026-09-02-15-42-22-658','(Unsaved)',$,(#1029));
+#1030=PRODUCT('2026-09-02-15-56-11-666','Slot Gauge',$,(#1029));
 #1031=PRESENTATION_STYLE_ASSIGNMENT((#1032));
 #1032=SURFACE_STYLE_USAGE(.BOTH.,#1033);
 #1033=SURFACE_SIDE_STYLE('',(#1034));

@@ -10,7 +10,7 @@ FILE_DESCRIPTION(
 
 FILE_NAME(
 /* name */ 'spool_cradle_bracket.step',
-/* time_stamp */ '2026-09-02T15:42:23-05:00',
+/* time_stamp */ '2026-09-02T15:56:21-05:00',
 /* author */ (''),
 /* organization */ (''),
 /* preprocessor_version */ 'ST-DEVELOPER v20.1',
@@ -1621,7 +1621,7 @@ SOLID_ANGLE_UNIT()
 #1565=PRODUCT_DEFINITION_SHAPE('',$,#1568);
 #1566=SHAPE_REPRESENTATION('',(#976),#1558);
 #1567=PRODUCT_DEFINITION_CONTEXT('part definition',#1572,'design');
-#1568=PRODUCT_DEFINITION('2026-09-02-15-42-23-246','(Unsaved)',#1569,#1567);
+#1568=PRODUCT_DEFINITION('2026-09-02-15-56-20-841','(Unsaved)',#1569,#1567);
 #1569=PRODUCT_DEFINITION_FORMATION('',$,#1574);
 #1570=PRODUCT_RELATED_PRODUCT_CATEGORY('(Unsaved)','(Unsaved)',(#1574));
 #1571=APPLICATION_PROTOCOL_DEFINITION('international standard',
@@ -1629,7 +1629,7 @@ SOLID_ANGLE_UNIT()
 #1572=APPLICATION_CONTEXT(
 'Core Data for Automotive Mechanical Design Process');
 #1573=PRODUCT_CONTEXT('part definition',#1572,'mechanical');
-#1574=PRODUCT('2026-09-02-15-42-23-246','(Unsaved)',$,(#1573));
+#1574=PRODUCT('2026-09-02-15-56-20-841','(Unsaved)',$,(#1573));
 #1575=PRESENTATION_STYLE_ASSIGNMENT((#1576));
 #1576=SURFACE_STYLE_USAGE(.BOTH.,#1577);
 #1577=SURFACE_SIDE_STYLE('',(#1578));
