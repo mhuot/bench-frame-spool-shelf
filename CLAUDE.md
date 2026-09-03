@@ -14,9 +14,11 @@ right hand.
 - The builds land in the Fusion cloud project **"LAN Spool Shelf"** as
   saved documents "Spool Cradle Bracket", "Slot Gauge", "Saddle Coupon";
   each scripted run saves a new version of the matching document. The
-  documents are build artifacts: the script is the source of truth, and
-  only the width user parameters (marked as driving in their comments) are
-  wired into features. dataFile.versionNumber reads stale right after
+  documents are build artifacts: the script is the source of truth. The
+  width parameters and the whole hook stack (constrained profile sketch +
+  hookRows/slotPitchVertical pattern) are wired into features and safe to
+  edit live; body-profile parameters are reference-only, as their comments
+  say. dataFile.versionNumber reads stale right after
   save(), so don't trust it in-run.
 - The Ergotron order guide (870-03-006) is `docs/03-006_obsolete.pdf`. It has
   frame widths and capacities but NOT slot geometry.

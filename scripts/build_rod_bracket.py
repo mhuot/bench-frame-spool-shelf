@@ -125,25 +125,32 @@ DOC_NAME = {
 
 _DRIVING = "drives the model; safe to edit live in Fusion"
 _REFERENCE = "reference only — edit scripts/build_rod_bracket.py and rebuild"
-# User parameters written into every document. Only the extrude widths are
-# wired into features (they are orthogonal to the sketch profiles, so a live
-# edit stays self-consistent); everything else is reference documentation,
-# because profile vertices are computed by the script and a live edit of,
-# say, rodOuterDiameter would resize the pocket circles but not the drop-in
+# User parameters written into every document. The extrude widths and the
+# ENTIRE hook stack are wired into features: the hook profile sketch is
+# fully constrained with dimensions referencing these parameters, and the
+# row array is a rectangular pattern driven by hookRows/slotPitchVertical,
+# so all hook geometry is live-editable and self-consistent in Fusion.
+# The body profiles (plate, arm triangle, saddles) remain script-computed;
+# their parameters are reference-only, because a live edit of, say,
+# rodOuterDiameter would resize the pocket circles but not the drop-in
 # opening polygons, leaving silently inconsistent geometry.
+# Values may be floats (mm) or expression strings referencing earlier
+# parameters (dict order is creation order).
 PARAMETERS = {
     "bracketWidth": (BRACKET_WIDTH, _DRIVING),
     "couponWidth": (COUPON_WIDTH, _DRIVING),
     "hookTabWidth": (HOOK_TAB_WIDTH, _DRIVING),
     "slotHeight": (SLOT_HEIGHT, _REFERENCE),
-    "slotPitchVertical": (SLOT_PITCH_VERTICAL, _REFERENCE),
+    "slotPitchVertical": (SLOT_PITCH_VERTICAL, _DRIVING),
     "slotWidth": (SLOT_WIDTH, _REFERENCE),
-    "faceMetalThickness": (FACE_METAL_THICKNESS, _REFERENCE),
-    "hookThroat": (HOOK_THROAT, _REFERENCE),
-    "hookNeckHeight": (HOOK_NECK_HEIGHT, _REFERENCE),
-    "hookLipThickness": (HOOK_LIP_THICKNESS, _REFERENCE),
-    "hookLipDrop": (HOOK_LIP_DROP, _REFERENCE),
-    "hookLipChamfer": (HOOK_LIP_CHAMFER, _REFERENCE),
+    "faceMetalThickness": (FACE_METAL_THICKNESS, _DRIVING),
+    "hookThroat": ("faceMetalThickness + 1.8 mm", _DRIVING),
+    "hookNeckHeight": (HOOK_NECK_HEIGHT, _DRIVING),
+    "hookLipThickness": (HOOK_LIP_THICKNESS, _DRIVING),
+    "hookLipDrop": (HOOK_LIP_DROP, _DRIVING),
+    "hookLipChamfer": (HOOK_LIP_CHAMFER, _DRIVING),
+    "topHookNeckTop": (TOP_HOOK_NECK_TOP, _DRIVING),
+    "hookRows": (str(HOOK_ROWS), _DRIVING),
     "plateThickness": (PLATE_THICKNESS, _REFERENCE),
     "plateHeight": (PLATE_HEIGHT, _REFERENCE),
     "gaugePlateThickness": (GAUGE_PLATE_THICKNESS, _REFERENCE),
@@ -154,6 +161,7 @@ PARAMETERS = {
     "rodSpacing": (ROD_SPACING, _REFERENCE),
     "memberWidth": (MEMBER_WIDTH, _REFERENCE),
 }
+UNITLESS_PARAMETERS = {"hookRows"}
 
 
 def _value(millimetres):
@@ -218,38 +226,133 @@ def _pocket_radius():
     return (ROD_OUTER_DIAMETER + SADDLE_CLEARANCE) / 2.0
 
 
-def _build_hooks(component, plane):
-    """One column of hook blades on the centreline (y = 0).
+def _build_hooks(component, plane):  # pylint: disable=too-many-locals
+    """One fully-constrained hook profile, extruded and patterned downward.
 
-    A single symmetric extrude of HOOK_TAB_WIDTH is inherently centred, so
-    no extent-direction signs are involved at all.
+    Unlike the script-computed body profiles, the hook stack is genuinely
+    parameter-driven in Fusion: the profile sketch is dimensioned against
+    the user parameters (hookThroat, hookNeckHeight, hookLipDrop,
+    hookLipThickness, hookLipChamfer, topHookNeckTop), the extrude by
+    hookTabWidth, and the row array is a rectangular pattern driven by
+    hookRows and slotPitchVertical — all live-editable, all consistent.
     """
     sketch = component.sketches.add(plane)
-    sketch.name = "Hook profiles"
+    sketch.name = "Hook profile"
+    neck_top = TOP_HOOK_NECK_TOP
+    neck_bottom = neck_top - HOOK_NECK_HEIGHT
+    lip_bottom = neck_bottom - HOOK_LIP_DROP
     back = -HOOK_THROAT
     lip_back = -(HOOK_THROAT + HOOK_LIP_THICKNESS)
-    for neck_top in _hook_row_tops():
-        neck_bottom = neck_top - HOOK_NECK_HEIGHT
-        lip_bottom = neck_bottom - HOOK_LIP_DROP
-        _add_polygon(
-            sketch,
-            [
-                (0.0, neck_top),
-                (lip_back, neck_top),
-                (lip_back, lip_bottom),
-                (back - HOOK_LIP_CHAMFER, lip_bottom),
-                (back, lip_bottom + HOOK_LIP_CHAMFER),
-                (back, neck_bottom),
-                (0.0, neck_bottom),
-            ],
+    lines = sketch.sketchCurves.sketchLines
+    top = lines.addByTwoPoints(_point(0.0, neck_top), _point(lip_back, neck_top))
+    rear = lines.addByTwoPoints(top.endSketchPoint, _point(lip_back, lip_bottom))
+    bottom = lines.addByTwoPoints(
+        rear.endSketchPoint, _point(back - HOOK_LIP_CHAMFER, lip_bottom)
+    )
+    chamfer = lines.addByTwoPoints(
+        bottom.endSketchPoint, _point(back, lip_bottom + HOOK_LIP_CHAMFER)
+    )
+    inner = lines.addByTwoPoints(chamfer.endSketchPoint, _point(back, neck_bottom))
+    neck = lines.addByTwoPoints(inner.endSketchPoint, _point(0.0, neck_bottom))
+    face = lines.addByTwoPoints(neck.endSketchPoint, top.startSketchPoint)
+
+    constraints = sketch.geometricConstraints
+    for line in (top, bottom, neck):
+        constraints.addHorizontal(line)
+    for line in (rear, inner, face):
+        constraints.addVertical(line)
+    # Pin the face line to the plate's rear plane (u = 0) without fixing
+    # its height: the sketch origin lies on the face line's carrier.
+    constraints.addCoincident(sketch.originPoint, face)
+
+    horizontal = adsk.fusion.DimensionOrientations.HorizontalDimensionOrientation
+    vertical = adsk.fusion.DimensionOrientations.VerticalDimensionOrientation
+    dimensions = sketch.sketchDimensions
+
+    # pylint: disable-next=too-many-arguments,too-many-positional-arguments
+    def _dim(point_a, point_b, orientation, expression, text_x, text_z):
+        dimension = dimensions.addDistanceDimension(
+            point_a, point_b, orientation, _point(text_x, text_z)
         )
-    _extrude_all_profiles(
+        dimension.parameter.expression = expression
+
+    mid_neck = (neck_top + neck_bottom) / 2.0
+    _dim(
+        sketch.originPoint,
+        top.startSketchPoint,
+        vertical,
+        "topHookNeckTop",
+        6.0,
+        neck_top / 2.0,
+    )
+    _dim(
+        top.startSketchPoint,
+        top.endSketchPoint,
+        horizontal,
+        "hookThroat + hookLipThickness",
+        -4.0,
+        neck_top + 5.0,
+    )
+    _dim(
+        neck.endSketchPoint,
+        neck.startSketchPoint,
+        horizontal,
+        "hookThroat",
+        -2.0,
+        neck_bottom - 3.0,
+    )
+    _dim(
+        top.startSketchPoint,
+        neck.endSketchPoint,
+        vertical,
+        "hookNeckHeight",
+        3.0,
+        mid_neck,
+    )
+    _dim(
+        inner.endSketchPoint,
+        inner.startSketchPoint,
+        vertical,
+        "hookLipDrop - hookLipChamfer",
+        -10.0,
+        (neck_bottom + lip_bottom) / 2.0,
+    )
+    _dim(
+        chamfer.startSketchPoint,
+        chamfer.endSketchPoint,
+        horizontal,
+        "hookLipChamfer",
+        -4.0,
+        lip_bottom - 3.0,
+    )
+    _dim(
+        chamfer.startSketchPoint,
+        chamfer.endSketchPoint,
+        vertical,
+        "hookLipChamfer",
+        -9.0,
+        lip_bottom + 3.0,
+    )
+
+    extrude = _extrude_all_profiles(
         component,
         sketch,
         "hookTabWidth",
         adsk.fusion.FeatureOperations.JoinFeatureOperation,
-        "Hook column",
+        "Hook profile",
     )
+    pattern_entities = adsk.core.ObjectCollection.create()
+    pattern_entities.add(extrude)
+    patterns = component.features.rectangularPatternFeatures
+    pattern_input = patterns.createInput(
+        pattern_entities,
+        component.zConstructionAxis,
+        adsk.core.ValueInput.createByString("hookRows"),
+        adsk.core.ValueInput.createByString("-slotPitchVertical"),
+        adsk.fusion.PatternDistanceType.SpacingPatternDistanceType,
+    )
+    pattern = patterns.add(pattern_input)
+    pattern.name = "Hook rows"
 
 
 def _add_saddles(component, plane, width):
@@ -531,10 +634,16 @@ def _clear_timeline(design):
 
 
 def _ensure_parameters(design):
-    """Create or update the document's user parameters from PARAMETERS."""
+    """Create or update the document's user parameters from PARAMETERS.
+
+    A value may be a float (mm) or an expression string referencing
+    parameters created earlier in dict order (e.g. hookThroat is
+    "faceMetalThickness + 1.8 mm").
+    """
     user_parameters = design.userParameters
-    for name, (value_mm, comment) in PARAMETERS.items():
-        expression = f"{value_mm} mm"
+    for name, (value, comment) in PARAMETERS.items():
+        expression = value if isinstance(value, str) else f"{value} mm"
+        units = "" if name in UNITLESS_PARAMETERS else "mm"
         existing = user_parameters.itemByName(name)
         if existing:
             existing.expression = expression
@@ -543,7 +652,7 @@ def _ensure_parameters(design):
             user_parameters.add(
                 name,
                 adsk.core.ValueInput.createByString(expression),
-                "mm",
+                units,
                 comment,
             )
 

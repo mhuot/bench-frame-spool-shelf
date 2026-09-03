@@ -118,11 +118,15 @@ numerically (the run fails loudly if any probe misses), exports the STL,
 STEP, and F3D together, and saves a **new Fusion version** of the document
 with a description recording the key dimensions — so the model's history
 lives in Fusion's version list as well as in git. Every document carries a
-user-parameter table mirroring the script constants: the extrude widths
-(`bracketWidth`, `couponWidth`, `hookTabWidth`) actually drive the model
-and are safe to edit live; the rest are marked reference-only because the
-sketch profiles are computed by the script — change those in
-`scripts/build_rod_bracket.py` and rebuild. Sanity-check a mesh afterwards with:
+user-parameter table mirroring the script constants. The extrude widths
+AND the entire hook stack are genuinely parameter-driven: the hook profile
+sketch is fully constrained against `hookThroat` (itself the expression
+`faceMetalThickness + 1.8 mm`), `hookNeckHeight`, `hookLipThickness`,
+`hookLipDrop`, `hookLipChamfer`, and `topHookNeckTop`, and the rows are a
+rectangular pattern driven by `hookRows` x `slotPitchVertical` — all safe
+to edit live in Fusion. The body profiles (plate, arm, saddles) remain
+script-computed; their parameters are marked reference-only — change those
+in `scripts/build_rod_bracket.py` and rebuild. Sanity-check a mesh afterwards with:
 
 ```sh
 .venv/bin/python scripts/check_stl.py exports/spool_cradle_bracket.stl <mm3 from build output>
