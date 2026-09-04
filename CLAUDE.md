@@ -8,9 +8,11 @@ right hand.
 
 ## Source of truth
 
-- `scripts/build_rod_bracket.py` builds every printed part. All dimensions
-  live at the top of that one file — there is deliberately no shared params
-  module (see the module-caching trap in the fusion-360-mcp skill).
+- `scripts/build_rod_bracket.py` builds the bracket, slot gauge, and
+  saddle coupon; `scripts/build_rod_end_cap.py` builds the rod end cap as
+  its own part and document. Dimensions live at the top of each script —
+  there is deliberately no shared params module (see the module-caching
+  trap in the fusion-360-mcp skill), so the small scaffolding is repeated.
 - The builds land in the Fusion cloud project **"LAN Spool Shelf"** as
   saved documents "Spool Cradle Bracket", "Slot Gauge", "Saddle Coupon";
   each scripted run saves a new version of the matching document. The
@@ -33,7 +35,7 @@ right hand.
   Run it through the MCP server with `scripts/run_in_fusion.py` (local,
   stdlib only): `python3 scripts/run_in_fusion.py scripts/build_rod_bracket.py`.
   Pass `--variant gauge` to build the slot fit gauge instead of the full
-  bracket.
+  bracket. `scripts/build_rod_end_cap.py` runs the same way (no variants).
 - **Locally, in `.venv`**: `scripts/check_stl.py` (trimesh) sanity-checks an
   exported mesh against the volume the build script printed.
 
