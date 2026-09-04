@@ -43,7 +43,10 @@ END_CAP_FLANGE_THICKNESS = 4.0
 END_CAP_STEM_LENGTH = 24.0  # 28 mm overall; deeper grip in the bore
 END_CAP_STEM_DIAMETER = PIPE_INNER_DIAMETER - 0.6  # slip fit
 END_CAP_RIB_DIAMETER = PIPE_INNER_DIAMETER + 0.4  # crush fit on the ribs
-END_CAP_TIP_CHAMFER = 1.5
+END_CAP_TIP_CHAMFER = 2.5  # generous lead-in; first caps were snug to start
+END_CAP_RIB_GRIP_LENGTH = 6.0  # full-height rib band near the flange; the
+# rest of each rib is a long wedge rising from flush at the tip, so
+# insertion starts loose and only tightens over the last few mm
 END_CAP_RIB_WIDTH = 2.0
 END_CAP_RIB_COUNT = 4
 
@@ -57,6 +60,7 @@ PARAMETERS = {
     "endCapStemDiameter": ("pipeInnerDiameter - 0.6 mm", _DRIVING),
     "endCapRibDiameter": ("pipeInnerDiameter + 0.4 mm", _DRIVING),
     "endCapTipChamfer": (END_CAP_TIP_CHAMFER, _DRIVING),
+    "endCapRibGripLength": (END_CAP_RIB_GRIP_LENGTH, _DRIVING),
     "endCapRibWidth": (END_CAP_RIB_WIDTH, _DRIVING),
     "endCapRibCount": (str(END_CAP_RIB_COUNT), _DRIVING),
 }
@@ -208,7 +212,8 @@ def _build_body(
     rib_inner = stem_radius - 1.0  # embedded 1 mm into the stem
     rib_z0 = END_CAP_FLANGE_THICKNESS + 1.0
     rib_z1 = tip_z - 2.0
-    rib_lead = 1.5  # slanted top so the pipe end rides onto the rib
+    grip_top = rib_z0 + END_CAP_RIB_GRIP_LENGTH  # full height ends here;
+    # above it the outer edge tapers to flush at the tip end
     rib = component.sketches.add(plane)
     rib.name = "Crush rib"
     rib_lines = _polyline(
@@ -216,7 +221,7 @@ def _build_body(
         [
             (rib_inner, rib_z0),
             (rib_radius, rib_z0),
-            (rib_radius, rib_z1 - rib_lead),
+            (rib_radius, grip_top),
             (rib_inner, rib_z1),
         ],
     )
@@ -268,7 +273,7 @@ def _build_body(
         rib.originPoint,
         rib_outer.endSketchPoint,
         vertical,
-        "endCapFlangeThickness + endCapStemLength - 3.5 mm",
+        "endCapFlangeThickness + 1 mm + endCapRibGripLength",
         rib_radius + 4.0,
         rib_z1 / 2.0,
     )
@@ -311,6 +316,7 @@ def _verify(body):  # pylint: disable=too-many-locals
     rib_mid = (stem_radius + rib_radius) / 2.0
     diagonal = rib_mid / math.sqrt(2.0)
     mid_stem = (END_CAP_FLANGE_THICKNESS + tip_z) / 2.0
+    grip_z = END_CAP_FLANGE_THICKNESS + 1.0 + END_CAP_RIB_GRIP_LENGTH / 2.0
     checks = [
         (
             "flange rim",
@@ -322,9 +328,10 @@ def _verify(body):  # pylint: disable=too-many-locals
         ("above flange, off stem", flange_radius - 1.5, 0.0, mid_stem, outside),
         ("stem core", 0.0, 0.0, mid_stem, inside),
         ("stem surface", stem_radius - 0.5, 0.0, mid_stem, inside),
-        ("rib +X", rib_mid, 0.0, mid_stem, inside),
-        ("rib +Y", 0.0, rib_mid, mid_stem, inside),
-        ("no rib at 45 degrees", diagonal, diagonal, mid_stem, outside),
+        ("rib +X in grip band", rib_mid, 0.0, grip_z, inside),
+        ("rib +Y in grip band", 0.0, rib_mid, grip_z, inside),
+        ("no rib at 45 degrees", diagonal, diagonal, grip_z, outside),
+        ("rib taper relieved near tip", rib_mid, 0.0, tip_z - 6.0, outside),
         ("tip chamfer relieved", stem_radius - 0.3, 0.0, tip_z - 0.3, outside),
     ]
     failures = []
