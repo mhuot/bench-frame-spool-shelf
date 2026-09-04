@@ -16,7 +16,7 @@ hardware; the brackets hook in like Ergotron's own shelves.
 | `exports/slot_gauge.stl` | **Print first.** Hook plate only — verifies the slot fit against the real upright. |
 | `exports/saddle_coupon.stl` | **Print second.** Thin slice of the two-saddle arm tip — verifies rod pocket diameter and drop-in fit against the real pipe/dowel. ~12 cm³. |
 | `exports/spool_cradle_bracket.stl` | The bracket. Print **two per shelf level**; it is symmetric, no left/right hand. |
-| `exports/rod_end_cap.stl` | Press-fit end cap for the sch 40 rods — flange 2 mm proud of the pipe OD stops the rod walking out of the saddles. Print **four per level**, flange down, no supports. |
+| `exports/rod_end_cap.stl` | Press-fit end cap for the rods — 42 mm flange stops the rod walking out of the saddles; 24 mm stem grips the measured 30 mm bore. Print **four per level**, flange down, no supports. |
 | `cad/*.step`, `cad/*.f3d` | The same parts as CAD, exported by the same build run as the STLs. |
 
 ## Fit check workflow
@@ -54,9 +54,10 @@ Two numbers are still assumptions: slot width and face metal thickness.
   sag, and cost" below for what to make them from.
 - Nothing retains the rods vertically because nothing pulls them up:
   spools press them into the saddles and are lifted off the rods, never
-  with them. Axially, press-fit end caps (`rod_end_cap.stl`) flange 2 mm
-  proud of the pipe OD so a rod cannot walk sideways out of the saddles;
-  their crush ribs grip the sch 40 bore, no glue needed.
+  with them. Axially, press-fit end caps (`rod_end_cap.stl`, 42 mm flange)
+  stop a rod walking sideways out of the saddles; their crush ribs grip
+  the pipe bore (30 mm, measured on the actual pipe — the sch 40 spec
+  says 26.6), no glue needed.
 - The bracket is 24 mm wide — narrower than the 1" gap between the two
   slot columns at the module centre, so both bays can carry cradles at the
   same height without the centre brackets colliding.

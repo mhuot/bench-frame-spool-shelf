@@ -35,10 +35,12 @@ EXPORT_NAME = "rod_end_cap"
 
 # --- Dimensions (mm) --------------------------------------------------------
 ROD_OUTER_DIAMETER = 33.4  # 1" schedule 40 PVC, matches the bracket saddles
-PIPE_INNER_DIAMETER = 26.6  # 1" schedule 40 PVC bore
-END_CAP_FLANGE_PROUD = 2.0  # flange radius beyond the pipe outer radius
+PIPE_INNER_DIAMETER = 30.0  # measured on the actual pipe 2026-09-04
+# (spec-sheet 1" sch 40 bore is 26.6 — the real pipe runs larger)
+END_CAP_FLANGE_PROUD = 4.3  # flange OD 42 mm; still inside the saddle
+# wall's 45.4 mm face, so the flange seats flat against the bracket
 END_CAP_FLANGE_THICKNESS = 4.0
-END_CAP_STEM_LENGTH = 14.0
+END_CAP_STEM_LENGTH = 24.0  # 28 mm overall; deeper grip in the bore
 END_CAP_STEM_DIAMETER = PIPE_INNER_DIAMETER - 0.6  # slip fit
 END_CAP_RIB_DIAMETER = PIPE_INNER_DIAMETER + 0.4  # crush fit on the ribs
 END_CAP_TIP_CHAMFER = 1.5
