@@ -201,41 +201,52 @@ def _build_ring(component, plane):
 
 
 def _build_mouth(component, plane):
-    """Wedge cut of 2 x mouthHalfAngleDeg, centred straight up.
+    """Mouth wedge: a quadrilateral apexed on the clip centre.
 
-    The legs are dimensioned as (outer radius + 5) / cos(half angle), so the
-    wedge always reaches past the ring wall however the angle is edited.
+    This is the user's own construction, recovered from version 3 of the
+    document: both legs start at the clip centre, the far side meets at a
+    point carried on a vertical centre construction line, and each leg gets
+    its own angular dimension to that line rather than a symmetry
+    constraint. Their sketch left the leg lengths free; here all three are
+    dimensioned to the same reach, so the sketch is fully constrained and
+    the wedge always clears the ring wall however the angle is edited.
     """
     sketch = component.sketches.add(plane)
     sketch.name = "Mouth"
     spread = math.radians(MOUTH_HALF_ANGLE_DEG)
     reach = (CLIP_OUTER_RADIUS + 5.0) / math.cos(spread)
     # pylint: disable-next=unbalanced-tuple-unpacking
-    leg_right, _base, leg_left = _polyline(
+    apex_to_right, right_to_top, _top_to_left, left_to_apex = _polyline(
         sketch,
         [
             (0.0, 0.0),
             (reach * math.sin(spread), reach * math.cos(spread)),
+            (0.0, reach),
             (-reach * math.sin(spread), reach * math.cos(spread)),
         ],
     )
     constraints = sketch.geometricConstraints
-    constraints.addCoincident(leg_right.startSketchPoint, sketch.originPoint)
-    # No horizontal constraint on the base: symmetry about the vertical axis
-    # already implies it, and adding both over-constrains the sketch.
-    axis = _construction_line(sketch, 0.0, reach)
-    constraints.addVertical(axis)
-    constraints.addSymmetry(leg_right, leg_left, axis)
-    dimension = sketch.sketchDimensions.addDistanceDimension(
-        leg_right.startSketchPoint,
-        leg_right.endSketchPoint,
-        adsk.fusion.DimensionOrientations.AlignedDimensionOrientation,
-        _point(reach * 0.6, reach * 0.35),
-    )
-    dimension.parameter.expression = (
-        f"(({CLIP_OUTER}) / 2 + 5 mm) / cos(mouthHalfAngleDeg)"
-    )
-    _set_angle(sketch, axis, leg_right, "mouthHalfAngleDeg", 4.0, reach * 0.5)
+    constraints.addCoincident(apex_to_right.startSketchPoint, sketch.originPoint)
+    centre = _construction_line(sketch, 0.0, reach)
+    constraints.addVertical(centre)
+    constraints.addCoincident(centre.endSketchPoint, right_to_top.endSketchPoint)
+
+    reach_expression = f"(({CLIP_OUTER}) / 2 + 5 mm) / cos(mouthHalfAngleDeg)"
+    for line, text in (
+        (apex_to_right, (reach * 0.55, reach * 0.2)),
+        (left_to_apex, (-reach * 0.55, reach * 0.2)),
+        (centre, (3.0, reach * 0.75)),
+    ):
+        dimension = sketch.sketchDimensions.addDistanceDimension(
+            line.startSketchPoint,
+            line.endSketchPoint,
+            adsk.fusion.DimensionOrientations.AlignedDimensionOrientation,
+            _point(*text),
+        )
+        dimension.parameter.expression = reach_expression
+    _set_angle(sketch, centre, apex_to_right, "mouthHalfAngleDeg", 5.0, reach * 0.45)
+    _set_angle(sketch, centre, left_to_apex, "mouthHalfAngleDeg", -5.0, reach * 0.45)
+    print(f"  mouth sketch fully constrained: {sketch.isFullyConstrained}")
     _extrude(
         component,
         _all_profiles(sketch),
