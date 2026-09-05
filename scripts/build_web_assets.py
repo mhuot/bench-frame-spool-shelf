@@ -189,6 +189,10 @@ def main():
     bounds = scene.bounds
     centre = (bounds[0] + bounds[1]) / 2.0
     scene.apply_transform(trimesh.transformations.translation_matrix(-centre))
+    # glTF is Y-up; the CAD scene is Z-up and trimesh does NOT convert. Without
+    # this the shelf renders standing on end, rods pointing at the sky, and it
+    # still looks like a plausible render — just of the wrong thing.
+    scene.apply_transform(rotation(-90, [1, 0, 0]))
     GLB_PATH.parent.mkdir(parents=True, exist_ok=True)
     GLB_PATH.write_bytes(trimesh.exchange.gltf.export_glb(scene))
     size_kb = GLB_PATH.stat().st_size / 1024.0
