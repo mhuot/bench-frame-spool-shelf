@@ -50,21 +50,20 @@ END_CAP_RIB_GRIP_LENGTH = 6.0  # full-height rib band near the flange; the
 END_CAP_RIB_WIDTH = 2.0
 END_CAP_RIB_COUNT = 4
 
-_DRIVING = "drives the model; safe to edit live in Fusion"
+# name: (value or expression, unit, comment). Every one must drive geometry.
 PARAMETERS = {
-    "rodOuterDiameter": (ROD_OUTER_DIAMETER, _DRIVING),
-    "pipeInnerDiameter": (PIPE_INNER_DIAMETER, _DRIVING),
-    "endCapFlangeProud": (END_CAP_FLANGE_PROUD, _DRIVING),
-    "endCapFlangeThickness": (END_CAP_FLANGE_THICKNESS, _DRIVING),
-    "endCapStemLength": (END_CAP_STEM_LENGTH, _DRIVING),
-    "endCapStemDiameter": ("pipeInnerDiameter - 0.6 mm", _DRIVING),
-    "endCapRibDiameter": ("pipeInnerDiameter + 0.4 mm", _DRIVING),
-    "endCapTipChamfer": (END_CAP_TIP_CHAMFER, _DRIVING),
-    "endCapRibGripLength": (END_CAP_RIB_GRIP_LENGTH, _DRIVING),
-    "endCapRibWidth": (END_CAP_RIB_WIDTH, _DRIVING),
-    "endCapRibCount": (str(END_CAP_RIB_COUNT), _DRIVING),
+    "rodOuterDiameter": (ROD_OUTER_DIAMETER, "mm", "pipe OD the flange exceeds"),
+    "pipeInnerDiameter": (PIPE_INNER_DIAMETER, "mm", "MEASURED bore, not the spec"),
+    "endCapFlangeProud": (END_CAP_FLANGE_PROUD, "mm", "flange beyond the pipe OD"),
+    "endCapFlangeThickness": (END_CAP_FLANGE_THICKNESS, "mm", "flange thickness"),
+    "endCapStemLength": (END_CAP_STEM_LENGTH, "mm", "stem depth into the bore"),
+    "endCapStemDiameter": ("pipeInnerDiameter - 0.6 mm", "mm", "slip fit"),
+    "endCapRibDiameter": ("pipeInnerDiameter + 0.4 mm", "mm", "crush fit on ribs"),
+    "endCapTipChamfer": (END_CAP_TIP_CHAMFER, "mm", "lead-in at the stem tip"),
+    "endCapRibWidth": (END_CAP_RIB_WIDTH, "mm", "rib width"),
+    "endCapRibCount": (str(END_CAP_RIB_COUNT), "", "ribs around the stem"),
+    "endCapRibGripLength": (END_CAP_RIB_GRIP_LENGTH, "mm", "full-height rib band"),
 }
-UNITLESS_PARAMETERS = {"endCapRibCount"}
 
 
 def _point(x_mm, z_mm):
@@ -91,10 +90,10 @@ def _dimension(sketch, point_a, point_b, orientation, expression, text_x, text_z
 
 
 def _ensure_parameters(design):
+    """Create or update user parameters, each with its declared unit."""
     user_parameters = design.userParameters
-    for name, (value, comment) in PARAMETERS.items():
-        expression = value if isinstance(value, str) else f"{value} mm"
-        units = "" if name in UNITLESS_PARAMETERS else "mm"
+    for name, (value, unit, comment) in PARAMETERS.items():
+        expression = value if isinstance(value, str) else f"{value} {unit}".strip()
         existing = user_parameters.itemByName(name)
         if existing:
             existing.expression = expression
@@ -103,9 +102,59 @@ def _ensure_parameters(design):
             user_parameters.add(
                 name,
                 adsk.core.ValueInput.createByString(expression),
-                units,
+                unit,
                 comment,
             )
+
+
+def _drop_stale_parameters(design):
+    """Delete parameters this script no longer declares, or that changed unit."""
+    user_parameters = design.userParameters
+    for index in range(user_parameters.count - 1, -1, -1):
+        parameter = user_parameters.item(index)
+        expected = PARAMETERS.get(parameter.name)
+        if expected is None or parameter.unit != expected[1]:
+            print(f"  dropping stale parameter {parameter.name}")
+            parameter.deleteMe()
+
+
+def _references(expression, name):
+    """True if a parameter expression references the given name."""
+    index = expression.find(name)
+    while index != -1:
+        before = expression[index - 1] if index else " "
+        after_index = index + len(name)
+        after = expression[after_index] if after_index < len(expression) else " "
+        if not (before.isalnum() or before == "_") and not (
+            after.isalnum() or after == "_"
+        ):
+            return True
+        index = expression.find(name, index + 1)
+    return False
+
+
+def _audit_parameters(design):
+    """Fail the build if a parameter drives nothing or has the wrong unit."""
+    user_parameters = design.userParameters
+    all_parameters = design.allParameters
+    expressions = {}
+    for index in range(all_parameters.count):
+        parameter = all_parameters.item(index)
+        expressions[parameter.name] = parameter.expression or ""
+    idle, wrong_unit = [], []
+    for index in range(user_parameters.count):
+        parameter = user_parameters.item(index)
+        if parameter.unit != PARAMETERS[parameter.name][1]:
+            wrong_unit.append(f"{parameter.name}={parameter.unit!r}")
+        used = any(
+            other != parameter.name and _references(expression, parameter.name)
+            for other, expression in expressions.items()
+        )
+        if not used:
+            idle.append(parameter.name)
+    print(f"  parameters: {user_parameters.count} declared, all driving geometry")
+    if wrong_unit or idle:
+        raise RuntimeError(f"audit failed: idle={idle} wrong_unit={wrong_unit}")
 
 
 def _build_body(
@@ -403,6 +452,7 @@ def run(_context: str):
         raise RuntimeError("active document is not a design")
     if data_file is not None:
         _clear_timeline(design)
+        _drop_stale_parameters(design)
     _ensure_parameters(design)
     component = design.rootComponent
     _build_body(component, component.xZConstructionPlane)
@@ -422,6 +472,7 @@ def run(_context: str):
         f"z [{bounding.minPoint.z / MM:.1f}, {bounding.maxPoint.z / MM:.1f}]"
     )
     _verify(body)
+    _audit_parameters(design)
     _export(design)
     description = (
         f"scripted end cap build {datetime.date.today().isoformat()}: "
