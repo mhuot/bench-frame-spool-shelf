@@ -14,8 +14,11 @@ Geometry, with the rod axis as the model Y axis through the origin:
   label face's normal points 40 degrees above horizontal: readable from a
   standing position, clear of the spool's surface.
 
-Print label-face-down (rotate so the face sits on the plate — glossy face
-off smooth PEI) with supports on build plate only under the hovering ring.
+Print ON ITS SIDE (rotate 90 deg about X): ring and stem lie flat as a C
+and the label face stands as a vertical fin, so the label surface gets
+clean support-free walls. Supports on build plate only, under the ring
+(which hovers mid-height, attached to the fin). Face-down does NOT work:
+the ring protrudes ~18 mm past the label face's plane.
 
 Scaffolding is repeated rather than shared on purpose — Fusion's persistent
 interpreter caches imported modules across MCP runs (fusion-360-mcp skill).
