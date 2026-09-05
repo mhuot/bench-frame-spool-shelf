@@ -17,7 +17,11 @@ Geometry, with the rod axis as the model Y axis through the origin:
   up, clearing the spool's resting contact point (about 23 deg off vertical)
   so the clip snaps on from below and the spool never touches it.
 - The paddle leaves the ring at paddleAngleDeg below horizontal-forward, so
-  the label face tilts up toward a standing viewer.
+  the label face tilts up toward a standing viewer. Its radii are derived
+  from the ring: the stem starts mid-wall, runs stemLength past the outer
+  wall, and the face adds faceHeight beyond that. Changing the rod, the
+  clearance or the wall therefore moves the stem with the ring instead of
+  leaving it poking into the bore.
 
 Print ON ITS SIDE (rotate 90 deg about X): ring and stem lie flat as a C and
 the label face stands as a vertical fin. Supports on build plate only.
@@ -47,13 +51,17 @@ CLIP_WIDTH = 9.0  # ring and stem width, along the rod
 MOUTH_HALF_ANGLE_DEG = 60.0  # half the mouth opening, about straight up
 PADDLE_ANGLE_DEG = 50.0  # paddle drop, degrees BELOW horizontal-forward
 PADDLE_THICKNESS = 2.4
-STEM_START_RADIUS = 16.0  # inside the ring wall, so the join is solid
-STEM_END_RADIUS = 31.0  # stem ends, label face begins
-FACE_END_RADIUS = 60.0  # outer edge of the label face (29 mm of face)
+STEM_LENGTH = 11.5  # stem reach beyond the ring's outer wall
+FACE_HEIGHT = 29.0  # label face, stem end outward; fits a 1" label
 FACE_WIDTH = 58.0  # along the rod; fits a 1" x 2-1/8" label with margin
 
 CLIP_INNER_RADIUS = (ROD_OUTER_DIAMETER + CLIP_CLEARANCE) / 2.0
 CLIP_OUTER_RADIUS = CLIP_INNER_RADIUS + CLIP_WALL
+# Derived: the stem starts in the middle of the ring wall so the join is
+# solid and the stem can never reach the bore, whatever the ring is set to.
+STEM_START_RADIUS = CLIP_INNER_RADIUS + CLIP_WALL / 2.0
+STEM_END_RADIUS = CLIP_OUTER_RADIUS + STEM_LENGTH
+FACE_END_RADIUS = STEM_END_RADIUS + FACE_HEIGHT
 
 # name: (value, unit, comment). Every one must drive geometry — see _audit.
 PARAMETERS = {
@@ -64,18 +72,42 @@ PARAMETERS = {
     "mouthHalfAngleDeg": (MOUTH_HALF_ANGLE_DEG, "deg", "half the mouth opening"),
     "paddleAngleDeg": (PADDLE_ANGLE_DEG, "deg", "paddle drop below horizontal"),
     "paddleThickness": (PADDLE_THICKNESS, "mm", "stem and label face thickness"),
-    "stemStartRadius": (STEM_START_RADIUS, "mm", "stem starts inside the ring"),
-    "stemEndRadius": (STEM_END_RADIUS, "mm", "stem ends, label face begins"),
-    "faceEndRadius": (FACE_END_RADIUS, "mm", "outer edge of the label face"),
+    "stemLength": (STEM_LENGTH, "mm", "stem reach beyond the ring outer wall"),
+    "faceHeight": (FACE_HEIGHT, "mm", "label face, from stem end outward"),
     "faceWidth": (FACE_WIDTH, "mm", "label face width along the rod"),
+}
+CLIP_BORE = "rodOuterDiameter + clipClearance"
+CLIP_OUTER = f"{CLIP_BORE} + 2 * clipWall"
+# Derived user parameters: name: (expression, unit, comment). They sit in
+# the parameter table so the radii are visible, but are driven by the
+# values above; editing one of these by hand just gets overwritten.
+DERIVED_PARAMETERS = {
+    "stemStartRadius": (
+        f"({CLIP_BORE}) / 2 + clipWall / 2",
+        "mm",
+        "derived: stem starts mid ring wall",
+    ),
+    "stemEndRadius": (
+        f"({CLIP_OUTER}) / 2 + stemLength",
+        "mm",
+        "derived: stem ends, label face begins",
+    ),
+    "faceEndRadius": (
+        "stemEndRadius + faceHeight",
+        "mm",
+        "derived: outer edge of the label face",
+    ),
+}
+ALL_PARAMETER_UNITS = {
+    name: unit
+    for table in (PARAMETERS, DERIVED_PARAMETERS)
+    for name, (_, unit, _) in table.items()
 }
 SEED_RADII = {
     "stemStartRadius": STEM_START_RADIUS,
     "stemEndRadius": STEM_END_RADIUS,
     "faceEndRadius": FACE_END_RADIUS,
 }
-CLIP_BORE = "rodOuterDiameter + clipClearance"
-CLIP_OUTER = f"{CLIP_BORE} + 2 * clipWall"
 
 
 def _point(x_mm, z_mm):
@@ -150,10 +182,20 @@ def _set_angle(sketch, line_one, line_two, expression, text_x, text_z):
 
 
 def _ensure_parameters(design):
-    """Create or update user parameters, each with its declared unit."""
+    """Create or update user parameters, each with its declared unit.
+
+    Plain parameters get a literal value; derived ones get an expression in
+    the plain ones, so they are created second.
+    """
     user_parameters = design.userParameters
-    for name, (value, unit, comment) in PARAMETERS.items():
-        expression = f"{value} {unit}".strip() if unit else str(value)
+    declared = [
+        (name, f"{value} {unit}", unit, comment)
+        for name, (value, unit, comment) in PARAMETERS.items()
+    ] + [
+        (name, expression, unit, comment)
+        for name, (expression, unit, comment) in DERIVED_PARAMETERS.items()
+    ]
+    for name, expression, unit, comment in declared:
         existing = user_parameters.itemByName(name)
         if existing:
             if existing.unit != unit:
@@ -365,6 +407,20 @@ def _verify(body):  # pylint: disable=too-many-locals
     checks += [
         ("bore is clear", 0.0, 0.0, -(CLIP_INNER_RADIUS - 0.3), outside),
         (
+            "bore clear under stem",
+            (CLIP_INNER_RADIUS - 0.3) * math.cos(angle),
+            0.0,
+            (CLIP_INNER_RADIUS - 0.3) * math.sin(angle),
+            outside,
+        ),
+        (
+            "stem joins ring wall",
+            wall_mid * math.cos(angle),
+            0.0,
+            wall_mid * math.sin(angle),
+            inside,
+        ),
+        (
             "stem mid",
             stem_mid * math.cos(angle),
             0.0,
@@ -442,7 +498,7 @@ def _audit_parameters(design):
     idle, wrong_unit = [], []
     for index in range(user_parameters.count):
         parameter = user_parameters.item(index)
-        expected_unit = PARAMETERS[parameter.name][1]
+        expected_unit = ALL_PARAMETER_UNITS[parameter.name]
         if parameter.unit != expected_unit:
             wrong_unit.append(f"{parameter.name}={parameter.unit!r}")
         used = any(
@@ -510,10 +566,7 @@ def _drop_stale_parameters(design):
     user_parameters = design.userParameters
     for index in range(user_parameters.count - 1, -1, -1):
         parameter = user_parameters.item(index)
-        if (
-            parameter.name not in PARAMETERS
-            or parameter.unit != PARAMETERS[parameter.name][1]
-        ):
+        if parameter.unit != ALL_PARAMETER_UNITS.get(parameter.name):
             print(f"  dropping stale parameter {parameter.name}")
             parameter.deleteMe()
 
