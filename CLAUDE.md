@@ -16,12 +16,14 @@ right hand.
 - The builds land in the Fusion cloud project **"LAN Spool Shelf"** as
   saved documents "Spool Cradle Bracket", "Slot Gauge", "Saddle Coupon";
   each scripted run saves a new version of the matching document. The
-  documents are build artifacts: the script is the source of truth. The
-  width parameters and the whole hook stack (constrained profile sketch +
-  hookRows/slotPitchVertical pattern) are wired into features and safe to
-  edit live; body-profile parameters are reference-only, as their comments
-  say. dataFile.versionNumber reads stale right after
-  save(), so don't trust it in-run.
+  documents are build artifacts: the script is the source of truth. EVERY
+  user parameter drives geometry — there are no reference-only parameters
+  any more — with lengths in mm, angles in deg and counts unitless, and the
+  build fails if that stops being true. dataFile.versionNumber reads stale
+  right after save(), so don't trust it in-run. A scripted rebuild discards
+  hand edits: they survive as the previous version, so recover them from
+  `dataFile.versions` (Fusion labels them 'User Saved') and fold them into
+  the script rather than re-doing them in the document.
 - The Ergotron order guide (870-03-006) sits at `docs/03-006_obsolete.pdf`
   when present, but is gitignored rather than redistributed. It has frame
   widths and capacities but NOT slot geometry.
@@ -39,6 +41,12 @@ right hand.
   bracket. `scripts/build_rod_end_cap.py` runs the same way (no variants).
 - **Locally, in `.venv`**: `scripts/check_stl.py` (trimesh) sanity-checks an
   exported mesh against the volume the build script printed.
+- **Fusion, any time**: `scripts/audit_parameters.py` checks every saved
+  document for parameters that drive nothing, units that contradict their
+  name, and sketches that are not fully constrained. Each build script also
+  runs this audit on itself before exporting, so a scripted rebuild cannot
+  ship an inert parameter; run the standalone one after editing a document
+  by hand, or before trusting a document built by an older script.
 
 The Fusion MCP server listens on `http://127.0.0.1:27182/mcp` (registered in
 this project's MCP config as `fusion`). Fusion must be running.
