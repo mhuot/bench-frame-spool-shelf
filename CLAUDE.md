@@ -22,8 +22,9 @@ right hand.
   edit live; body-profile parameters are reference-only, as their comments
   say. dataFile.versionNumber reads stale right after
   save(), so don't trust it in-run.
-- The Ergotron order guide (870-03-006) is `docs/03-006_obsolete.pdf`. It has
-  frame widths and capacities but NOT slot geometry.
+- The Ergotron order guide (870-03-006) sits at `docs/03-006_obsolete.pdf`
+  when present, but is gitignored rather than redistributed. It has frame
+  widths and capacities but NOT slot geometry.
 - Slot geometry was measured on the actual desk: **3/4" tall slots on 1"
   vertical pitch** (user measurement, 2026-09-02). Slot *width* and face
   metal thickness are still assumed values — the slot gauge print exists to

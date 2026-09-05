@@ -2,3 +2,5 @@
 __pycache__/
 *.gcode
 *.bgcode
+.DS_Store
+docs/03-006_obsolete.pdf

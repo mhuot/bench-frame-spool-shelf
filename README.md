@@ -1,5 +1,7 @@
 # LAN Spool Shelf
 
+**[Project site &rarr; mhuot.github.io/lan-spool-shelf](https://mhuot.github.io/lan-spool-shelf/)**
+
 Filament spool storage for an Ergotron LAN Organizer 3000. Two 3D-printed
 brackets hook into the slotted DuraFrame uprights and carry **two parallel
 rods** — 1" schedule 40 PVC by default, or wooden dowels — and spools rest
@@ -139,6 +141,7 @@ in `scripts/build_rod_bracket.py` and rebuild. Sanity-check a mesh afterwards wi
 .venv/bin/python scripts/check_stl.py exports/spool_cradle_bracket.stl <mm3 from build output>
 ```
 
-The Ergotron order guide lives in `docs/03-006_obsolete.pdf`; it documents
-frame widths and capacities but not slot geometry, hence the hand
-measurements above.
+The Ergotron order guide (870-03-006) documents frame widths and
+capacities but not slot geometry, hence the hand measurements above. It is
+Ergotron's document, so it is not redistributed here; keep your copy at
+`docs/03-006_obsolete.pdf` (gitignored) if you have one.

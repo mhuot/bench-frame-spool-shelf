@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LAN Spool Shelf</title>
+<meta name="description" content="3D printed brackets that hook into an Ergotron LAN Organizer 3000 and cradle filament spools on two rods. No drilling, no hardware. Free files, MIT licensed.">
+<meta property="og:title" content="LAN Spool Shelf">
+<meta property="og:description" content="Filament spool storage that hooks into an old Ergotron LAN Organizer, no drilling. Two rods, spools lift straight out.">
+<meta property="og:type" content="website">
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --text: #1a1d21;
+    --muted: #5b6470;
+    --accent: #c62a22;
+    --link: #2563eb;
+    --border: #e2e6eb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101216;
+      --panel: #181b21;
+      --text: #e8eaed;
+      --muted: #9aa3af;
+      --accent: #ef4444;
+      --link: #60a5fa;
+      --border: #2a2f38;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 0 1.5rem 3rem; }
+  header { padding: 3rem 0 1rem; }
+  h1 { font-size: 2rem; letter-spacing: -0.02em; line-height: 1.2; }
+  .tagline { color: var(--muted); margin-top: 0.5rem; font-size: 1.1rem; }
+  h2 { font-size: 1.3rem; margin: 2.5rem 0 0.75rem; letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; margin: 1.6rem 0 0.4rem; }
+  p { margin: 0.9rem 0; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  model-viewer {
+    width: 100%;
+    height: min(58vh, 520px);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-top: 1.5rem;
+  }
+  .hint { color: var(--muted); font-size: 0.85rem; text-align: center; padding: 0.5rem 0 0; }
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.25rem 0; }
+  .shots img {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel);
+  }
+  .shots figure { margin: 0; }
+  .shots figcaption { color: var(--muted); font-size: 0.82rem; padding: 0.4rem 0 0; }
+  @media (max-width: 640px) { .shots { grid-template-columns: 1fr; } }
+  .cta {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    padding: 0.7rem 1.3rem;
+    border-radius: 10px;
+    margin-top: 0.5rem;
+  }
+  .cta:hover { text-decoration: none; filter: brightness(1.07); }
+  ul { margin: 0.9rem 0 0.9rem 1.4rem; }
+  li { margin: 0.35rem 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.1rem 0;
+    font-size: 0.93rem;
+  }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.85rem; }
+  td.num { white-space: nowrap; }
+  .table-wrap { overflow-x: auto; }
+  .pill {
+    display: inline-block; font-size: 0.75rem; font-weight: 600;
+    color: var(--accent); border: 1px solid currentColor;
+    border-radius: 999px; padding: 0.1rem 0.55rem; vertical-align: 0.1em;
+  }
+  footer {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
+  main img { max-width: 100%; height: auto; display: block; }
+  figure { margin: 1.5rem 0; }
+  figure img {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel);
+  }
+  figcaption { color: var(--muted); font-size: 0.85rem; text-align: center; padding: 0.5rem 0 0; }
+
+  [data-zoom] { cursor: zoom-in; }
+  .zoomable { position: relative; }
+  .zoomable::after {
+    content: "click to enlarge";
+    position: absolute; right: 0.6rem; top: 0.6rem;
+    background: rgba(8,10,13,0.68); color: #fff;
+    font-size: 0.72rem; padding: 0.22rem 0.5rem; border-radius: 6px;
+    pointer-events: none; opacity: 0; transition: opacity 0.15s;
+  }
+  .zoomable:hover::after, .zoomable:focus-within::after { opacity: 1; }
+  @media (hover: none) { .zoomable::after { content: "tap to enlarge"; opacity: 1; } }
+
+  .lightbox {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(8,10,13,0.95);
+    display: none; overflow: auto;
+    padding: 3.25rem 1rem 2.5rem;
+  }
+  .lightbox.is-open { display: block; }
+  .lightbox img {
+    display: block; margin: 0 auto;
+    max-width: none; height: auto;
+    cursor: zoom-out; border-radius: 6px;
+  }
+  .lightbox-close {
+    position: fixed; top: 0.6rem; right: 0.8rem;
+    background: rgba(255,255,255,0.12); color: #fff;
+    border: 1px solid rgba(255,255,255,0.3); border-radius: 8px;
+    font: inherit; font-size: 0.9rem; line-height: 1;
+    padding: 0.5rem 0.8rem; cursor: pointer;
+  }
+  .lightbox-close:hover { background: rgba(255,255,255,0.22); }
+  .lightbox-caption {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    text-align: center; color: #cfd6de; font-size: 0.82rem;
+    padding: 0.7rem 1rem;
+    background: linear-gradient(transparent, rgba(8,10,13,0.92));
+    pointer-events: none;
+  }
+  body.lightbox-open { overflow: hidden; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Filament everywhere. So it hangs off the old Ergotron.</h1>
+    <p class="tagline">3D printed brackets that hook into the slotted uprights of an Ergotron LAN Organizer 3000 and cradle spools on two rods. No drilling, no hardware, nothing permanent. Free files, MIT licensed.</p>
+  </header>
+
+  <figure class="zoomable">
+    <img src="images/shelf-loaded.jpg" alt="A loaded spool shelf: fifteen filament spools resting on two white PVC rods carried by red printed brackets hooked into a steel upright" data-zoom>
+    <figcaption>Fifteen spools on one level, and the bracket that holds them. Nothing is screwed to the frame — the brackets hook into the same slots Ergotron's own shelves use, and lift back out.</figcaption>
+  </figure>
+
+  <model-viewer
+    src="models/spool-shelf.glb"
+    alt="3D model of one shelf level: two printed brackets hooked to uprights, two rods, end caps, three spools resting in the cradle and a label clip"
+    camera-controls
+    auto-rotate
+    auto-rotate-delay="1500"
+    rotation-per-second="16deg"
+    shadow-intensity="0.8"
+    exposure="1.05"
+    camera-orbit="35deg 70deg 105%"
+    interaction-prompt="none">
+  </model-viewer>
+  <p class="hint">Drag to spin, scroll to zoom. Red parts are the printed ones. One level: two brackets, two rods, four end caps, a label clip.</p>
+
+  <h2>Why this exists</h2>
+  <p>Filament was living in a heap. Bags on the bench, spools stacked on their sides under the printers, and the one I wanted always at the bottom of the pile. Meanwhile I had an Ergotron LAN Organizer 3000 holding up the printers — a 2004-vintage steel desk frame with punched slots up every upright, which is exactly the kind of mounting surface you would design for this if you were starting from scratch.</p>
+  <p>The frame is discontinued, and the order guide that survives it (Ergotron 870-03-006) has frame widths and weight capacities but no slot dimensions at all, so the whole project starts with a ruler.</p>
+
+  <h2>How it works</h2>
+  <p>Two brackets hook into one upright each, and two rods span between them. Spools rest in the valley between the rods rather than threading onto a single pole. That was not the first design — the first one was a single rod you hang spools on, and it took about ten seconds of thinking about daily use to kill it, because every spool change means pulling the pole and sliding everything off the end.</p>
+  <p>With two rods you lift a spool straight up and out, and drop the next one in. Nothing else moves. A spool sitting in the cradle also rolls freely, so it feeds without fighting.</p>
+  <div class="shots">
+    <figure>
+      <img src="images/spool_cradle_bracket_iso.png" alt="The cradle bracket: hook blades at the back, triangular arm, two open saddles on top" loading="lazy" data-zoom>
+      <figcaption>The bracket. Hooks at the back, two open saddles on top, one lightening cutout in the middle.</figcaption>
+    </figure>
+    <figure>
+      <img src="images/rod_end_cap_iso.png" alt="The rod end cap: a wide flange and a ribbed stem" loading="lazy" data-zoom>
+      <figcaption>End cap. The stem grips the pipe bore, the flange keeps the rod from walking out of a saddle.</figcaption>
+    </figure>
+  </div>
+  <p>Rod axes sit 70&nbsp;mm and 150&nbsp;mm out from the upright face. That spacing is not arbitrary: a 200&nbsp;mm spool resting on both rods sits at about a 20 degree contact angle, which is deep enough that it will not wander and shallow enough to lift out one-handed. It also puts the back of the spool about 10&nbsp;mm off the upright, which is the clearance the pegboard version later reuses as a backstop.</p>
+  <p>Nothing retains the rods vertically, because nothing ever pulls them up. Spools press them down into the saddles. Sideways is a different story, which is what the end caps are for: a stem that grips the pipe bore and a flange wider than the pipe, so a rod cannot walk out of its saddle while you shove spools around.</p>
+
+  <h2>What the ruler got wrong</h2>
+  <p>Every dimension that came from a measurement was right. Every dimension that came from a spec sheet was wrong.</p>
+  <p>The slots measured 3/4 inch tall on 1 inch pitch, and that held. The face metal I guessed at 2&nbsp;mm from a photo, and the first printed gauge — a hook plate with no bracket attached to it, twenty minutes of plastic — slid into the slots, dropped a few millimetres and jammed. Paint and the burr a punched slot leaves on its inside edge are worth another millimetre that no drawing tells you about. The throat went from 2.8 to 3.8&nbsp;mm, the lips got lead-in chamfers, and the second gauge seated properly.</p>
+  <p>Then the pipe. Schedule 40 one-inch PVC has a published bore of 26.6&nbsp;mm. The actual pipe measured 30. The first set of end caps were scrap by 4&nbsp;mm, which is a lot of millimetres to be wrong by when the number is printed in a table.</p>
+  <p>The third one was mine: the caps were made too snug to start. The fix was not a bigger chamfer but a different rib shape — each of the four crush ribs now starts flush with the stem at the tip and only rises to full height over the last 6&nbsp;mm, so the cap slides in loose, centres itself, and grips just as the flange lands.</p>
+  <figure class="zoomable">
+    <img src="images/shelf-prototype.jpg" alt="An early test with a copper pipe and a length of conduit carrying spools" loading="lazy" data-zoom>
+    <figcaption>Before buying pipe: a copper offcut and a length of conduit proved the cradle worked. The saddles take anything up to the configured diameter, so the rod is a decision you can defer.</figcaption>
+  </figure>
+
+  <h2>Rods: what to use</h2>
+  <p>Rod strength is never the limit here — PVC runs at about 2&nbsp;MPa of a 50&nbsp;MPa allowable. Stiffness is, because sagging rods make a shallow valley and spools drift toward the middle of it. Sag below is per rod at full load, about 5.6&nbsp;kg each over a 711&nbsp;mm span.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Rod</th><th>Sag</th><th>Drops into the stock saddle?</th><th>Cost per level</th></tr></thead>
+    <tbody>
+      <tr><td>1" sch 40 PVC <span class="pill">default</span></td><td class="num">~2.4 mm, creeping to 4–6</td><td>yes</td><td class="num">~$5</td></tr>
+      <tr><td>1" sch 40 aluminium pipe</td><td class="num">~0.1 mm</td><td>yes — same 33.4 mm OD</td><td class="num">~$32</td></tr>
+      <tr><td>1¼" hardwood dowel</td><td class="num">~0.4 mm</td><td>2.5 mm of play, fine</td><td class="num">~$10</td></tr>
+      <tr><td>¾" EMT conduit</td><td class="num">~0.25 mm</td><td>no — one parameter change</td><td class="num">~$5</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Start with PVC. It is fine, and the open saddles mean you can swap rods later without reprinting anything. If the spools bunching toward the middle ever annoys you, aluminium pipe has the identical outside diameter and drops straight in; EMT is stiffer per dollar than anything else but wants the saddle pocket rebuilt, which is one constant and a re-run.</p>
+  <p>One level holds about 12&nbsp;kg — a full row of nine 1&nbsp;kg spools, with roughly a 2× margin on the brackets.</p>
+
+  <h2>The small parts</h2>
+  <div class="shots">
+    <figure>
+      <img src="images/rod_label_clip_iso.png" alt="The label clip: a C ring with a paddle carrying a label face" loading="lazy" data-zoom>
+      <figcaption>Label clip. Snaps on from below, slides to sit under its spool, takes a 1" × 2⅛" label.</figcaption>
+    </figure>
+    <figure>
+      <img src="images/spool_cradle_bracket_iso.png" alt="The bracket again, showing the hook stack" loading="lazy" data-zoom>
+      <figcaption>Four hook rows on 1" pitch. The blade column is centred, so one bracket fits any upright.</figcaption>
+    </figure>
+  </div>
+  <p>The label clip is a C that snaps onto a rod from below. Its mouth spans 140 degrees at the top, which sounds like a lot until you notice the spool touches the rod only about 23 degrees off vertical — right in the middle of that opening. So the clip wraps the bottom of the rod, where nothing else is happening, and the spool never touches it.</p>
+  <p>There are two test coupons in the repo, and printing them is the whole reason this went together in two evenings instead of a week. The slot gauge is the hook plate on its own. The saddle coupon is an 8&nbsp;mm slice of the arm with both rod pockets. Between them they test every dimension that a spec sheet could lie about, for about 20&nbsp;g of plastic, before you commit four hours to a bracket.</p>
+
+  <h2>Printing</h2>
+  <p>Brackets lie on their side, so the layer planes line up with the load and no seam crosses a hook lip. ASA if your printer is enclosed, PETG otherwise — both resist the slow creep that would let a loaded hook sag over months, which is what rules out PLA here. Four or more perimeters, 40% infill, and supports on the build plate only, under the hook blades.</p>
+  <p>One warning that cost me a print: ASA wants a <strong>smooth</strong> PEI sheet, not a textured one, and it wants that sheet washed with dish soap. Isopropyl alone left enough oil behind to turn a plate of end caps into spaghetti; soap and hot water fixed it on the next attempt.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Part</th><th>Per level</th><th>Material</th><th>Time</th></tr></thead>
+    <tbody>
+      <tr><td>Spool cradle bracket</td><td class="num">2</td><td class="num">~90 g each</td><td class="num">~3h 50m each</td></tr>
+      <tr><td>Rod end cap</td><td class="num">4</td><td class="num">~33 g total</td><td class="num">~1h 30m</td></tr>
+      <tr><td>Rod label clip</td><td class="num">one per spool</td><td class="num">~6.5 g each</td><td class="num">~50m each</td></tr>
+      <tr><td>Slot gauge + saddle coupon</td><td class="num">once, first</td><td class="num">~23 g total</td><td class="num">~1h</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Everything is a script</h2>
+  <p>No part of this was drawn by hand. Each one is a Python script driving Fusion 360 over its local MCP server: the script builds the geometry, probes it numerically — is the rod pocket actually empty, is there really no hook where there should not be one — and refuses to export if any probe misses. Then it writes the STL, STEP and F3D in the same run, so they cannot drift apart, and saves a new version of the Fusion document with the dimensions in the description.</p>
+  <p>That is also why the fixes above were cheap. Changing the throat that jammed was one constant and a re-run, and every downstream file moved with it.</p>
+
+  <h2>Get the files</h2>
+  <p>Everything is in the repo, MIT licensed.</p>
+  <ul>
+    <li>STLs for every part, verified watertight against the CAD volume</li>
+    <li>STEP and Fusion archives if you want to change things</li>
+    <li>The build scripts, with every dimension at the top of one file per part</li>
+    <li>A sibling project, <a href="https://github.com/mhuot/lan-pegboard-mount">lan-pegboard-mount</a>, that hangs pegboard on the same uprights and doubles as a backstop behind the spools</li>
+  </ul>
+  <p><a class="cta" href="https://github.com/mhuot/lan-spool-shelf">Get it on GitHub</a></p>
+
+  <h2>If your frame is not this frame</h2>
+  <p>The hook geometry is the only part that cares. It is four numbers at the top of <code>scripts/build_rod_bracket.py</code> — slot pitch, slot width, face metal thickness, and the throat clearance derived from it — and the slot gauge exists to tell you what yours actually are. Any slotted upright on a regular pitch is fair game.</p>
+</main>
+
+<footer>
+  Built by <a href="https://github.com/mhuot">Mike Huot</a>. MIT licensed — print it, change it, sell prints of it.
+</footer>
+
+<div class="lightbox" id="lightbox" hidden>
+  <button class="lightbox-close" type="button">Close</button>
+  <img id="lightbox-image" src="" alt="">
+  <div class="lightbox-caption" id="lightbox-caption"></div>
+</div>
+
+<script>
+(function () {
+  var box = document.getElementById('lightbox');
+  var full = document.getElementById('lightbox-image');
+  var caption = document.getElementById('lightbox-caption');
+  var closer = box.querySelector('.lightbox-close');
+  var opener = null;
+  box.hidden = false;
+
+  function describe(img) {
+    var figure = img.closest('figure');
+    var text = figure && figure.querySelector('figcaption');
+    return text ? text.textContent : (img.alt || '');
+  }
+
+  function open(img) {
+    full.src = img.currentSrc || img.src;
+    full.alt = img.alt || '';
+    caption.textContent = describe(img);
+    box.classList.add('is-open');
+    document.body.classList.add('lightbox-open');
+    box.scrollTop = 0;
+    box.scrollLeft = Math.max(0, (full.naturalWidth - box.clientWidth) / 2);
+    opener = img;
+    closer.focus();
+  }
+
+  function close() {
+    box.classList.remove('is-open');
+    document.body.classList.remove('lightbox-open');
+    if (opener) { opener.focus(); }
+  }
+
+  full.addEventListener('load', function () {
+    if (box.classList.contains('is-open')) {
+      box.scrollLeft = Math.max(0, (full.naturalWidth - box.clientWidth) / 2);
+    }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-zoom]'), function (img) {
+    img.tabIndex = 0;
+    img.addEventListener('click', function () { open(img); });
+    img.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        open(img);
+      }
+    });
+  });
+
+  closer.addEventListener('click', close);
+  box.addEventListener('click', function (event) {
+    if (event.target !== closer) { close(); }
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && box.classList.contains('is-open')) { close(); }
+  });
+})();
+</script>
+</body>
+</html>
