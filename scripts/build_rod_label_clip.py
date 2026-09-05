@@ -43,8 +43,9 @@ MOUTH_HALF_ANGLE_DEG = 70.0  # mouth spans +/-70 deg about straight up
 PADDLE_ANGLE_DEG = -50.0  # paddle direction below horizontal-forward
 PADDLE_THICKNESS = 2.4
 STEM_END_RADIUS = 31.0  # stem runs from inside the ring wall out to here
-FACE_END_RADIUS = 48.0  # label face occupies stem end .. here (17 mm)
-FACE_WIDTH = 55.0  # along the rod; fits under one 70 mm spool slot
+FACE_END_RADIUS = 60.0  # label face occupies stem end .. here (29 mm)
+FACE_WIDTH = 58.0  # along the rod; sized for 1" x 2-1/8" (25.4 x 54 mm)
+# adhesive labels with margin, and still clear of the ~70 mm spool pitch
 
 CLIP_INNER_RADIUS = (ROD_OUTER_DIAMETER + CLIP_CLEARANCE) / 2.0
 CLIP_OUTER_RADIUS = CLIP_INNER_RADIUS + CLIP_WALL
