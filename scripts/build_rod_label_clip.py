@@ -38,6 +38,9 @@ import adsk.fusion
 
 MM = 0.1  # Fusion API lengths are centimetres
 
+# Set True only to deliberately discard a hand edit in the document.
+ALLOW_OVERWRITE = False
+
 PROJECT_DIR = "/Users/mhuot/lan-spool-shelf"
 FUSION_PROJECT_NAME = "LAN Spool Shelf"
 DOC_NAME = "Rod Label Clip"
@@ -548,6 +551,27 @@ def _existing_data_file(folder, name):
     return hits[0] if hits else None
 
 
+def _refuse_if_hand_edited(data_file):
+    """Never clear a timeline carrying edits this script did not make.
+
+    Fusion labels a human's save "User Saved"; every scripted save here
+    starts with "scripted". If the latest version is not ours, someone
+    changed the document in Fusion and a rebuild would silently discard it.
+    That has happened twice — the label clip's mouth construction and the
+    SKADIS peg fillet — and both had to be reverse-engineered out of the
+    version history. Set ALLOW_OVERWRITE = True to proceed deliberately.
+    """
+    description = data_file.description or ""
+    if ALLOW_OVERWRITE or description.startswith("scripted"):
+        return
+    raise RuntimeError(
+        f"{data_file.name!r} v{data_file.versionNumber} was last saved by hand "
+        f"({description!r}). Rebuilding would discard that edit. Inspect the "
+        "document, fold the change into this script, then rebuild — or set "
+        "ALLOW_OVERWRITE = True if the edit is genuinely disposable."
+    )
+
+
 def _clear_timeline(design):
     timeline = design.timeline
     while timeline.count:
@@ -584,6 +608,7 @@ def run(_context: str):
     if design is None:
         raise RuntimeError("active document is not a design")
     if data_file is not None:
+        _refuse_if_hand_edited(data_file)
         _clear_timeline(design)
         _drop_stale_parameters(design)
     _ensure_parameters(design)
