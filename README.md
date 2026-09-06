@@ -19,7 +19,7 @@ hardware; the brackets hook in like Ergotron's own shelves.
 | `exports/saddle_coupon.stl` | **Print second.** Thin slice of the two-saddle arm tip — verifies rod pocket diameter and drop-in fit against the real pipe/dowel. ~12 cm³. |
 | `exports/spool_cradle_bracket.stl` | The bracket. Print **two per shelf level**; it is symmetric, no left/right hand. |
 | `exports/rod_end_cap.stl` | Press-fit end cap for the rods — 42 mm flange stops the rod walking out of the saddles; 24 mm stem grips the measured 30 mm bore. Print **four per level**, flange down, no supports. |
-| `exports/rod_label_clip.stl` | Snap-on label clip: C-ring snaps onto a rod from below and slides under its spool; a 55 x 17 mm face (fits 12 mm label tape) tilts up toward you. Print **one per spool**, on its side (rotate 90° about X) with build-plate supports. |
+| `exports/rod_label_clip.stl` | Snap-on label clip: C-ring snaps onto a rod from below and slides under its spool; a 58 x 29 mm face (fits a 1" x 2-1/8" adhesive label) hangs just past plumb, aimed at a viewer looking up at a rod above head height. The face is flush with one side of the ring. Print **one per spool** on that flat side (rotate 90° about X): no supports, no brim. |
 | `cad/*.step`, `cad/*.f3d` | The same parts as CAD, exported by the same build run as the STLs. |
 
 ## Fit check workflow
