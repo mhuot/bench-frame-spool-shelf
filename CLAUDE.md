@@ -16,8 +16,9 @@ right hand.
 - The builds land in the Fusion cloud project **"LAN Spool Shelf"** as
   saved documents "Spool Cradle Bracket", "Slot Gauge", "Saddle Coupon";
   each scripted run saves a new version of the matching document. The
-  documents are build artifacts: the script is the source of truth. EVERY
-  user parameter drives geometry — there are no reference-only parameters
+  documents are where Mike works, and the script is what regenerates them.
+  See "Working with the Fusion documents" below before touching either.
+  EVERY user parameter drives geometry — there are no reference-only parameters
   any more — with lengths in mm, angles in deg and counts unitless, and the
   build fails if that stops being true. dataFile.versionNumber reads stale
   right after save(), so don't trust it in-run. A scripted rebuild discards
@@ -31,6 +32,30 @@ right hand.
   vertical pitch** (user measurement, 2026-09-02). Slot *width* and face
   metal thickness are still assumed values — the slot gauge print exists to
   verify them before committing to full brackets.
+
+## Working with the Fusion documents
+
+Fusion is the surface Mike interacts with. The scripts are still the source
+of truth for geometry — they regenerate a document from scratch — but that
+makes a hand edit in Fusion something a rebuild will destroy, so:
+
+1. **Never rebuild over an edit.** Every build script checks the document's
+   latest version before clearing its timeline. Fusion labels a human's save
+   `User Saved`; a scripted save starts with `scripted` and records the body
+   volume (`... vol 5937 mm3`). If the latest save is a human's AND the
+   geometry differs from that recorded volume, the build refuses. A plain
+   save with unchanged geometry is recognised as benign and proceeds.
+2. **Treat an edit as a proposal, not a mistake.** Read the document first —
+   parameters, sketch dimensions, constraint types, timeline — work out what
+   changed, and fold it into the script. Then rebuild and check the volume
+   matches the document's. That is what confirms the script reproduces the
+   intent rather than an approximation of it.
+3. **Edits are never lost, even if overwritten.** They survive as the prior
+   version; enumerate `dataFile.versions`, open the `User Saved` one
+   read-only, and read it. Both the label clip's mouth construction and the
+   SKADIS peg fillet were recovered this way after being destroyed.
+4. `ALLOW_OVERWRITE = True` at the top of a build script bypasses the guard.
+   Use it only after confirming the document holds nothing of value.
 
 ## Which scripts run where
 

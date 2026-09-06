@@ -744,24 +744,53 @@ def _existing_data_file(folder, name):
     return hits[0] if hits else None
 
 
-def _refuse_if_hand_edited(data_file):
-    """Never clear a timeline carrying edits this script did not make.
+def _recorded_volume(data_file):
+    """Body volume in mm^3 recorded by the most recent scripted save."""
+    versions = data_file.versions
+    for index in range(versions.count):  # newest first
+        text = versions.item(index).description or ""
+        if text.startswith("scripted") and " vol " in text:
+            try:
+                return float(text.split(" vol ")[1].split()[0])
+            except (IndexError, ValueError):
+                return None
+    return None
 
-    Fusion labels a human's save "User Saved"; every scripted save here
-    starts with "scripted". If the latest version is not ours, someone
-    changed the document in Fusion and a rebuild would silently discard it.
-    That has happened twice — the label clip's mouth construction and the
-    SKADIS peg fillet — and both had to be reverse-engineered out of the
-    version history. Set ALLOW_OVERWRITE = True to proceed deliberately.
+
+def _refuse_if_hand_edited(data_file, design):
+    """Never clear a timeline carrying geometry this script did not build.
+
+    Fusion labels a human's save "User Saved". That alone is not proof of an
+    edit — opening a document and pressing save is common and harmless — so
+    compare the geometry against the volume recorded by the last scripted
+    save. Same volume, benign save, carry on. Different, stop: an edit is
+    sitting there and rebuilding would discard it. That has already cost the
+    label clip's mouth construction and the SKADIS peg fillet, both of which
+    had to be reverse-engineered out of version history.
     """
     description = data_file.description or ""
     if ALLOW_OVERWRITE or description.startswith("scripted"):
         return
+    recorded = _recorded_volume(data_file)
+    bodies = design.rootComponent.bRepBodies
+    current = bodies.item(0).volume / (MM**3) if bodies.count else None
+    if recorded is not None and current is not None and abs(current - recorded) < 1.0:
+        print(
+            f"  note: last save was {description!r}, but the geometry still "
+            f"matches the last scripted build ({current:.0f} mm^3) — proceeding"
+        )
+        return
+    difference = (
+        f"{current:.0f} vs {recorded:.0f} mm^3"
+        if recorded is not None and current is not None
+        else "no recorded volume to compare"
+    )
     raise RuntimeError(
         f"{data_file.name!r} v{data_file.versionNumber} was last saved by hand "
-        f"({description!r}). Rebuilding would discard that edit. Inspect the "
-        "document, fold the change into this script, then rebuild — or set "
-        "ALLOW_OVERWRITE = True if the edit is genuinely disposable."
+        f"({description!r}) and its geometry differs: {difference}. Rebuilding "
+        "would discard that edit. Inspect the document, fold the change into "
+        "this script, then rebuild — or set ALLOW_OVERWRITE = True if the edit "
+        "is genuinely disposable."
     )
 
 
@@ -802,7 +831,7 @@ def run(_context: str):
     if design is None:
         raise RuntimeError("active document is not a design")
     if data_file is not None:
-        _refuse_if_hand_edited(data_file)
+        _refuse_if_hand_edited(data_file, design)
         _clear_timeline(design)
         _drop_stale_parameters(design)
     _ensure_parameters(design)
@@ -839,6 +868,7 @@ def run(_context: str):
         f"slot {SLOT_WIDTH} mm, rod {ROD_OUTER_DIAMETER} mm, "
         f"width {BRACKET_WIDTH} mm"
     )
+    description += f" vol {body.volume / (MM ** 3):.0f} mm3"
     if data_file is None:
         document.saveAs(doc_name, folder, description, "")
     else:
