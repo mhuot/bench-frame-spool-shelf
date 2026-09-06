@@ -27,7 +27,11 @@ Geometry, with the rod axis as the model Y axis through the origin:
   leaving it poking into the bore.
 
 - The label face is flush with one side of the ring rather than centred
-  on it, so the whole part has a flat side.
+  on it, so the whole part has a flat side. That offsets the face's weight
+  along the rod, and the ring cocks on the rod until its side edges touch
+  the pipe: the tilt limit is about clipClearance / clipWidth. At 9 mm the
+  label hung 3 deg off level; 20 mm halves that. Older 9 mm clips take the
+  retrofit collar from build_rod_label_collar.py instead.
 
 Print ON THAT SIDE (rotate 90 deg about X): ring, stem and label face all
 sit on the bed, the face standing as a vertical fin. No supports, no brim.
@@ -56,7 +60,7 @@ EXPORT_NAME = "rod_label_clip"
 ROD_OUTER_DIAMETER = 33.4  # 1" schedule 40 PVC, as on the shelf
 CLIP_CLEARANCE = 0.7  # diametral: slides and spins freely on the rod
 CLIP_WALL = 2.4
-CLIP_WIDTH = 9.0  # ring and stem width, along the rod
+CLIP_WIDTH = 20.0  # ring and stem width along the rod; the lever against tilt
 MOUTH_HALF_ANGLE_DEG = 60.0  # half the mouth opening, about straight up
 PADDLE_ANGLE_DEG = 100.0  # paddle drop, degrees BELOW horizontal-forward
 PADDLE_THICKNESS = 2.4
