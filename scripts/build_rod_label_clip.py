@@ -16,15 +16,21 @@ Geometry, with the rod axis as the model Y axis through the origin:
   clipWall. The mouth is a wedge of 2 x mouthHalfAngleDeg centred straight
   up, clearing the spool's resting contact point (about 23 deg off vertical)
   so the clip snaps on from below and the spool never touches it.
-- The paddle leaves the ring at paddleAngleDeg below horizontal-forward, so
-  the label face tilts up toward a standing viewer. Its radii are derived
+- The paddle leaves the ring at paddleAngleDeg below horizontal-forward.
+  At 100 deg it hangs just past plumb with its lower edge leaned back, so
+  the face aims at a viewer looking up at a rod above head height (the rod
+  sits about 76" up; a 72" viewer looks up at it by 10 to 20 deg). A shelf
+  below eye level would want about 50 deg instead. Its radii are derived
   from the ring: the stem starts mid-wall, runs stemLength past the outer
   wall, and the face adds faceHeight beyond that. Changing the rod, the
   clearance or the wall therefore moves the stem with the ring instead of
   leaving it poking into the bore.
 
-Print ON ITS SIDE (rotate 90 deg about X): ring and stem lie flat as a C and
-the label face stands as a vertical fin. Supports on build plate only.
+- The label face is flush with one side of the ring rather than centred
+  on it, so the whole part has a flat side.
+
+Print ON THAT SIDE (rotate 90 deg about X): ring, stem and label face all
+sit on the bed, the face standing as a vertical fin. No supports, no brim.
 
 Scaffolding is repeated rather than shared on purpose — Fusion's persistent
 interpreter caches imported modules across MCP runs (fusion-360-mcp skill).
@@ -52,7 +58,7 @@ CLIP_CLEARANCE = 0.7  # diametral: slides and spins freely on the rod
 CLIP_WALL = 2.4
 CLIP_WIDTH = 9.0  # ring and stem width, along the rod
 MOUTH_HALF_ANGLE_DEG = 60.0  # half the mouth opening, about straight up
-PADDLE_ANGLE_DEG = 50.0  # paddle drop, degrees BELOW horizontal-forward
+PADDLE_ANGLE_DEG = 100.0  # paddle drop, degrees BELOW horizontal-forward
 PADDLE_THICKNESS = 2.4
 STEM_LENGTH = 11.5  # stem reach beyond the ring's outer wall
 FACE_HEIGHT = 29.0  # label face, stem end outward; fits a 1" label
@@ -163,16 +169,6 @@ def _annulus_profile(sketch):
         if profile.profileLoops.count == 2:
             return profile
     raise RuntimeError("no annulus profile found")
-
-
-# pylint: disable-next=too-many-arguments,too-many-positional-arguments
-def _set_offset(sketch, line, entity, expression, text_x, text_z):
-    """Dimension the perpendicular distance from a line to a point or line."""
-    dimension = sketch.sketchDimensions.addOffsetDimension(
-        line, entity, _point(text_x, text_z)
-    )
-    dimension.parameter.expression = expression
-    return dimension
 
 
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
@@ -301,80 +297,224 @@ def _build_mouth(component, plane):
     )
 
 
-# pylint: disable-next=too-many-arguments,too-many-positional-arguments,too-many-locals
-def _build_strip(component, plane, name, start_name, end_name, width_expression):
-    """A paddle strip at paddleAngleDeg below horizontal, fully constrained.
+def _paddle_direction():
+    """Unit vector along the paddle in model space (x forward, z up)."""
+    angle = math.radians(PADDLE_ANGLE_DEG)
+    return adsk.core.Vector3D.create(math.cos(angle), 0.0, -math.sin(angle))
 
-    Each of the four corners is pinned by a horizontal and a vertical
-    dimension off the origin, written as expressions in the radii,
-    paddleThickness and paddleAngleDeg. Offset and angular dimensions were
-    tried first and are a trap here: they are unsigned, so the solver is
-    free to mirror the strip through the origin — which it silently did,
-    landing the stem up and behind the ring instead of down in front.
+
+def _build_paddle_plane(component):
+    """Plane through the rod axis whose normal is the paddle direction.
+
+    The YZ plane rotated about the rod axis by paddleAngleDeg. Fusion does
+    not say which way a positive angle turns, so the normal is checked and
+    the sign of the expression flipped if it came out the other way. The
+    paddle cross-sections are sketched on this plane and extruded outward
+    from it, which is what lets the paddle sit at any angle: the earlier
+    construction pinned corners with unsigned distances from the origin,
+    and past about 85 deg a corner crossed the axis and the solver was free
+    to mirror the whole strip.
     """
+    planes = component.constructionPlanes
+    wanted = _paddle_direction()
+    for expression in ("paddleAngleDeg", "-paddleAngleDeg"):
+        plane_input = planes.createInput()
+        plane_input.setByAngle(
+            component.yConstructionAxis,
+            adsk.core.ValueInput.createByString(expression),
+            component.yZConstructionPlane,
+        )
+        plane = planes.add(plane_input)
+        normal = plane.geometry.normal
+        if abs(abs(normal.dotProduct(wanted)) - 1.0) < 1e-6:
+            plane.name = "Paddle plane"
+            print(f"  paddle plane: angle expression {expression!r}")
+            return plane
+        plane.deleteMe()
+    raise RuntimeError("paddle plane normal never matched the paddle direction")
+
+
+def _section_point(sketch, along_mm, across_mm):
+    """Sketch point on the paddle plane: along the rod, across the paddle."""
+    angle = math.radians(PADDLE_ANGLE_DEG)
+    model = adsk.core.Point3D.create(
+        across_mm * math.sin(angle) * MM,
+        along_mm * MM,
+        across_mm * math.cos(angle) * MM,
+    )
+    return sketch.modelToSketchSpace(model)
+
+
+def _section_sketch(component, plane, name):
+    """Sketch on the paddle plane with the rod axis projected as a line."""
     sketch = component.sketches.add(plane)
     sketch.name = name
-    angle = math.radians(PADDLE_ANGLE_DEG)
-    half = PADDLE_THICKNESS / 2.0
-    corners = []
-    for radius_name, side in (
-        (start_name, 1.0),
-        (end_name, 1.0),
-        (end_name, -1.0),
-        (start_name, -1.0),
-    ):
-        radius = SEED_RADII[radius_name]
-        x_mm = radius * math.cos(angle) + side * half * math.sin(angle)
-        z_mm = -(radius * math.sin(angle)) + side * half * math.cos(angle)
-        sign = "+" if side > 0 else "-"
-        x_expression = (
-            f"{radius_name} * cos(paddleAngleDeg) "
-            f"{sign} paddleThickness / 2 * sin(paddleAngleDeg)"
-        )
-        # z is below the axis, so dimension its magnitude.
-        z_expression = (
-            f"{radius_name} * sin(paddleAngleDeg) "
-            f"{'-' if side > 0 else '+'} paddleThickness / 2 * cos(paddleAngleDeg)"
-        )
-        if x_mm <= 0 or z_mm >= 0:
-            raise RuntimeError(
-                f"{name} corner at ({x_mm:.1f}, {z_mm:.1f}) is not down-forward; "
-                "the unsigned dimensions below would mirror it"
-            )
-        corners.append((x_mm, z_mm, x_expression, z_expression))
+    origin = sketch.originPoint.worldGeometry
+    if origin.distanceTo(adsk.core.Point3D.create(0, 0, 0)) > 1e-6:
+        raise RuntimeError(f"{name} sketch origin is off the rod axis")
+    axis = sketch.project(component.yConstructionAxis).item(0)
+    axis.isConstruction = True
+    return sketch, axis
 
-    lines = _polyline(sketch, [(x, z) for x, z, _, _ in corners])
-    horizontal = adsk.fusion.DimensionOrientations.HorizontalDimensionOrientation
-    vertical = adsk.fusion.DimensionOrientations.VerticalDimensionOrientation
-    dimensions = sketch.sketchDimensions
-    for index, (x_mm, z_mm, x_expression, z_expression) in enumerate(corners):
-        corner_point = lines[index].startSketchPoint
-        for orientation, expression, text in (
-            (horizontal, x_expression, (x_mm * 0.5, z_mm - 4.0 - index * 3.0)),
-            (vertical, z_expression, (x_mm + 5.0 + index * 3.0, z_mm * 0.5)),
-        ):
-            dimension = dimensions.addDistanceDimension(
-                sketch.originPoint, corner_point, orientation, _point(*text)
-            )
-            dimension.parameter.expression = expression
-    _extrude(
+
+def _section_rectangle(sketch, axis, along_range, half_thickness):
+    """Closed rectangle: long sides parallel to and symmetric about the axis.
+
+    Returns (near, far, long_sides): the short sides at the low and high end
+    of along_range, and the two long sides. Their positions along the rod
+    are left to the caller.
+    """
+    low, high = along_range
+    corners = [
+        _section_point(sketch, low, half_thickness),
+        _section_point(sketch, high, half_thickness),
+        _section_point(sketch, high, -half_thickness),
+        _section_point(sketch, low, -half_thickness),
+    ]
+    lines = sketch.sketchCurves.sketchLines
+    made = [lines.addByTwoPoints(corners[0], corners[1])]
+    for corner in corners[2:]:
+        made.append(lines.addByTwoPoints(made[-1].endSketchPoint, corner))
+    made.append(lines.addByTwoPoints(made[-1].endSketchPoint, made[0].startSketchPoint))
+    top, far, bottom, near = made  # pylint: disable=unbalanced-tuple-unpacking
+    constraints = sketch.geometricConstraints
+    constraints.addParallel(top, axis)
+    constraints.addParallel(bottom, axis)
+    constraints.addPerpendicular(near, axis)
+    constraints.addPerpendicular(far, axis)
+    constraints.addSymmetry(top, bottom, axis)
+    _set_offset_between(sketch, top, bottom, "paddleThickness", (high + 4.0, 0.0))
+    return near, far
+
+
+def _set_offset_between(sketch, line_one, line_two, expression, text_at):
+    """Dimension the distance between two parallel lines on the paddle plane.
+
+    text_at is (along, across) in mm for the dimension text.
+    """
+    dimension = sketch.sketchDimensions.addOffsetDimension(
+        line_one, line_two, _section_point(sketch, *text_at)
+    )
+    dimension.parameter.expression = expression
+    return dimension
+
+
+def _extrude_outward(component, sketch, start_expression, length_expression, name):
+    """Join-extrude every profile of the sketch away from the rod axis.
+
+    Starts start_expression from the sketch plane and runs length_expression
+    further, both along the paddle direction. The sketch normal may point
+    either way along that direction, so the offset and the extent direction
+    are flipped together when it points inward.
+    """
+    normal = sketch.xDirection.crossProduct(sketch.yDirection)
+    outward = normal.dotProduct(_paddle_direction())
+    if abs(abs(outward) - 1.0) > 1e-6:
+        raise RuntimeError(f"{name}: sketch normal is not along the paddle")
+    if outward > 0:
+        offset = start_expression
+        direction = adsk.fusion.ExtentDirections.PositiveExtentDirection
+    else:
+        offset = f"-({start_expression})"
+        direction = adsk.fusion.ExtentDirections.NegativeExtentDirection
+    profiles = adsk.core.ObjectCollection.create()
+    for profile in _all_profiles(sketch):
+        profiles.add(profile)
+    extrudes = component.features.extrudeFeatures
+    extrude_input = extrudes.createInput(
+        profiles, adsk.fusion.FeatureOperations.JoinFeatureOperation
+    )
+    extrude_input.startExtent = adsk.fusion.OffsetStartDefinition.create(
+        adsk.core.ValueInput.createByString(offset)
+    )
+    extrude_input.setOneSideExtent(
+        adsk.fusion.DistanceExtentDefinition.create(
+            adsk.core.ValueInput.createByString(length_expression)
+        ),
+        direction,
+    )
+    feature = extrudes.add(extrude_input)
+    feature.name = name
+    return feature
+
+
+def _require_constrained(sketch):
+    print(f"  {sketch.name} sketch fully constrained: {sketch.isFullyConstrained}")
+    if not sketch.isFullyConstrained:
+        raise RuntimeError(f"{sketch.name} sketch is not fully constrained")
+
+
+def _build_stem(component, plane):
+    """Stem cross-section centred on the rod axis; returns its near edge.
+
+    clipWidth along the rod, paddleThickness across, symmetric both ways so
+    nothing can mirror. Extruded from mid ring wall to stemEndRadius.
+    """
+    sketch, axis = _section_sketch(component, plane, "Stem section")
+    half_width = CLIP_WIDTH / 2.0
+    near, far = _section_rectangle(
+        sketch, axis, (-half_width, half_width), PADDLE_THICKNESS / 2.0
+    )
+    centre = sketch.sketchCurves.sketchLines.addByTwoPoints(
+        _section_point(sketch, 0.0, 0.0), _section_point(sketch, 0.0, 6.0)
+    )
+    centre.isConstruction = True
+    constraints = sketch.geometricConstraints
+    constraints.addCoincident(centre.startSketchPoint, sketch.originPoint)
+    constraints.addPerpendicular(centre, axis)
+    length = sketch.sketchDimensions.addDistanceDimension(
+        centre.startSketchPoint,
+        centre.endSketchPoint,
+        adsk.fusion.DimensionOrientations.AlignedDimensionOrientation,
+        _section_point(sketch, 2.0, 5.0),
+    )
+    length.parameter.expression = "paddleThickness * 2"
+    constraints.addSymmetry(near, far, centre)
+    _set_offset_between(sketch, near, far, "clipWidth", (0.0, -PADDLE_THICKNESS - 2.0))
+    _require_constrained(sketch)
+    _extrude_outward(
+        component, sketch, "stemStartRadius", "stemEndRadius - stemStartRadius", "Stem"
+    )
+    if near.startSketchPoint.worldGeometry.y > 0:
+        raise RuntimeError("stem near edge solved onto the far side")
+    return near
+
+
+def _build_face(component, plane, stem_near_edge):
+    """Label face, flush with one side of the ring so it prints unsupported.
+
+    The face used to be centred on the ring, which in the side-on print
+    orientation left the ring and stem floating 24.5 mm above the bed on
+    support. Its near edge is now collinear with the stem's, so ring, stem
+    and face all sit on the bed. Extruded from stemEndRadius by faceHeight.
+    """
+    sketch, axis = _section_sketch(component, plane, "Face section")
+    half_width = CLIP_WIDTH / 2.0
+    near, far = _section_rectangle(
+        sketch, axis, (-half_width, FACE_WIDTH - half_width), PADDLE_THICKNESS / 2.0
+    )
+    stem_edge = sketch.project(stem_near_edge).item(0)
+    stem_edge.isConstruction = True
+    sketch.geometricConstraints.addCollinear(near, stem_edge)
+    _set_offset_between(
+        sketch, near, far, "faceWidth", (FACE_WIDTH / 2.0, -PADDLE_THICKNESS - 2.0)
+    )
+    _require_constrained(sketch)
+    _extrude_outward(
         component,
-        _all_profiles(sketch),
-        width_expression,
-        adsk.fusion.FeatureOperations.JoinFeatureOperation,
-        name,
+        sketch,
+        "stemEndRadius",
+        "faceEndRadius - stemEndRadius",
+        "Label face",
     )
 
 
 def _build_body(component, plane):
     _build_ring(component, plane)
     _build_mouth(component, plane)
-    _build_strip(
-        component, plane, "Stem", "stemStartRadius", "stemEndRadius", "clipWidth"
-    )
-    _build_strip(
-        component, plane, "Label face", "stemEndRadius", "faceEndRadius", "faceWidth"
-    )
+    paddle_plane = _build_paddle_plane(component)
+    stem_near_edge = _build_stem(component, paddle_plane)
+    _build_face(component, paddle_plane, stem_near_edge)
 
 
 def _probe(body, x_mm, y_mm, z_mm):
@@ -459,6 +599,22 @@ def _verify(body):  # pylint: disable=too-many-locals
             outside,
         ),
     ]
+    # The face is flush with the ring's -y side and extends past its +y side.
+    for label, y_mm, expected in (
+        ("face flush at ring -y side", -CLIP_WIDTH / 2.0 - 1.0, outside),
+        ("face covers ring +y side", CLIP_WIDTH / 2.0 + 1.0, inside),
+        ("face reaches full width", FACE_WIDTH - CLIP_WIDTH / 2.0 - 1.0, inside),
+        ("face stops at full width", FACE_WIDTH - CLIP_WIDTH / 2.0 + 1.0, outside),
+    ):
+        checks.append(
+            (
+                label,
+                face_mid * math.cos(angle),
+                y_mm,
+                face_mid * math.sin(angle),
+                expected,
+            )
+        )
     failures = []
     for label, x_mm, y_mm, z_mm, expected in checks:
         actual = _probe(body, x_mm, y_mm, z_mm)
@@ -466,6 +622,12 @@ def _verify(body):  # pylint: disable=too-many-locals
         print(f"  probe {label:26s} ({x_mm:6.1f},{y_mm:6.1f},{z_mm:6.1f}) {state}")
         if actual != expected:
             failures.append(label)
+    bounding = body.boundingBox
+    flat_side = bounding.minPoint.y / MM
+    if abs(flat_side + CLIP_WIDTH / 2.0) > 0.01:
+        failures.append(f"flat side at y={flat_side:.2f}, expected {-CLIP_WIDTH / 2.0}")
+    else:
+        print(f"  flat side at y={flat_side:.2f} mm: prints on the bed unsupported")
     if failures:
         raise RuntimeError(f"geometry probes failed: {failures}")
 
@@ -664,7 +826,7 @@ def run(_context: str):
     description = (
         f"scripted label clip build {datetime.date.today().isoformat()}: "
         f"rod {ROD_OUTER_DIAMETER} mm, mouth +/-{MOUTH_HALF_ANGLE_DEG:.0f} deg, "
-        f"face {FACE_WIDTH:.0f} mm"
+        f"paddle {PADDLE_ANGLE_DEG:.0f} deg, face {FACE_WIDTH:.0f} mm"
     )
     description += f" vol {body.volume / (MM ** 3):.0f} mm3"
     if data_file is None:
