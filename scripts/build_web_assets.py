@@ -37,7 +37,8 @@ ROD_Y0 = -(ROD_LENGTH - BRACKET_SPACING) / 2.0  # rod overhangs each bracket
 SPOOL_RADIUS = 100.0
 SPOOL_WIDTH = 68.0
 SPOOL_FLANGE_THICKNESS = 3.5
-SPOOL_HUB_RADIUS = 32.0
+SPOOL_HUB_RADIUS = 32.0  # core tube outside; also the flange hole
+SPOOL_CORE_BORE_RADIUS = 26.0  # core tube inside: you can see through a spool
 SPOOL_WOUND_RADIUS = 92.0
 SPOOL_X = (REAR_ROD_X + FRONT_ROD_X) / 2.0
 # A spool rests on both rods: its axis sits where it touches each of them.
@@ -119,24 +120,38 @@ def rod(x_mm):
 
 
 def spool(y_center, group):
-    """Flanges plus wound filament plus hub, resting in the cradle."""
+    """Two flanges, the wound filament between them, and a hollow core.
+
+    trimesh builds cylinders and annuli on the Z axis, so the flanges are
+    offset along Z and the whole spool is then rotated to lie along the
+    rods. An earlier version offset them along Y, which left both flanges
+    at the spool's middle, shifted up and down, with the core sticking out
+    of the sides where the flanges should have been.
+    """
     pieces = []
     for side in (-1.0, 1.0):
-        flange = trimesh.creation.cylinder(
-            radius=SPOOL_RADIUS, height=SPOOL_FLANGE_THICKNESS, sections=64
+        flange = trimesh.creation.annulus(
+            r_min=SPOOL_HUB_RADIUS,
+            r_max=SPOOL_RADIUS,
+            height=SPOOL_FLANGE_THICKNESS,
+            sections=64,
         )
         offset = side * (SPOOL_WIDTH - SPOOL_FLANGE_THICKNESS) / 2.0
-        flange.apply_transform(translation(0, offset, 0))
+        flange.apply_transform(translation(0, 0, offset))
         pieces.append(flange)
-    wound = trimesh.creation.cylinder(
-        radius=SPOOL_WOUND_RADIUS,
-        height=SPOOL_WIDTH - 2 * SPOOL_FLANGE_THICKNESS - 1.0,
+    wound = trimesh.creation.annulus(
+        r_min=SPOOL_HUB_RADIUS,
+        r_max=SPOOL_WOUND_RADIUS,
+        height=SPOOL_WIDTH - 2 * SPOOL_FLANGE_THICKNESS,
         sections=64,
     )
     pieces.append(wound)
     body = trimesh.util.concatenate(pieces)
-    hub = trimesh.creation.cylinder(
-        radius=SPOOL_HUB_RADIUS, height=SPOOL_WIDTH + 2.0, sections=48
+    hub = trimesh.creation.annulus(
+        r_min=SPOOL_CORE_BORE_RADIUS,
+        r_max=SPOOL_HUB_RADIUS,
+        height=SPOOL_WIDTH,
+        sections=48,
     )
     transform = translation(SPOOL_X, y_center, SPOOL_Z) @ rotation(90, [1, 0, 0])
     body.apply_transform(transform)
