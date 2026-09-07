@@ -11,14 +11,12 @@ right hand.
 - `scripts/build_rod_bracket.py` builds the bracket, slot gauge, and
   saddle coupon; `scripts/build_rod_end_cap.py` builds the rod end cap as
   its own part and document; `scripts/build_rod_label_clip.py` builds the
-  label clip and `scripts/build_rod_label_collar.py` the retrofit collar
-  that widens first-run 9 mm clips (its ring/stem parameters describe the
-  PRINTED clip, not the current clip script). Dimensions live at the top of each script —
+  label clip. Dimensions live at the top of each script —
   there is deliberately no shared params module (see the module-caching
   trap in the fusion-360-mcp skill), so the small scaffolding is repeated.
 - The builds land in the Fusion cloud project **"LAN Spool Shelf"** as
   saved documents "Spool Cradle Bracket", "Slot Gauge", "Saddle Coupon",
-  "Rod End Cap", "Rod Label Clip", "Rod Label Collar";
+  "Rod End Cap", "Rod Label Clip";
   each scripted run saves a new version of the matching document. The
   documents are where Mike works, and the script is what regenerates them.
   See "Working with the Fusion documents" below before touching either.

@@ -30,8 +30,7 @@ Geometry, with the rod axis as the model Y axis through the origin:
   on it, so the whole part has a flat side. That offsets the face's weight
   along the rod, and the ring cocks on the rod until its side edges touch
   the pipe: the tilt limit is about clipClearance / clipWidth. At 9 mm the
-  label hung 3 deg off level; 20 mm halves that. Older 9 mm clips take the
-  retrofit collar from build_rod_label_collar.py instead.
+  label hung 3 deg off level; 20 mm halves that.
 
 Print ON THAT SIDE (rotate 90 deg about X): ring, stem and label face all
 sit on the bed, the face standing as a vertical fin. No supports, no brim.
