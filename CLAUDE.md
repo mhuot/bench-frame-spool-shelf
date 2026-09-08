@@ -1,4 +1,4 @@
-# lan-spool-shelf
+# bench-frame-spool-shelf
 
 3D-printed brackets that hook into the slotted DuraFrame uprights of an
 Ergotron LAN Organizer 3000 and carry a horizontal rod (1" schedule 40 PVC by

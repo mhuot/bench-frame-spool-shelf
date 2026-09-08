@@ -31,7 +31,7 @@ MM = 0.1  # Fusion API lengths are centimetres
 # Set True only to deliberately discard a hand edit in the document.
 ALLOW_OVERWRITE = False
 
-PROJECT_DIR = "/Users/mhuot/lan-spool-shelf"
+PROJECT_DIR = "/Users/mhuot/bench-frame-spool-shelf"
 FUSION_PROJECT_NAME = "LAN Spool Shelf"
 DOC_NAME = "Rod End Cap"
 EXPORT_NAME = "rod_end_cap"

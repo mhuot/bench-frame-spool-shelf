@@ -1,6 +1,6 @@
-# LAN Spool Shelf
+# Bench Frame Spool Shelf
 
-**[Project site &rarr; mhuot.github.io/lan-spool-shelf](https://mhuot.github.io/lan-spool-shelf/)**
+**[Project site &rarr; mhuot.github.io/bench-frame-spool-shelf](https://mhuot.github.io/bench-frame-spool-shelf/)**
 
 Filament spool storage for an Ergotron LAN Organizer 3000. Two printed
 brackets hook into the slotted DuraFrame uprights and carry two parallel

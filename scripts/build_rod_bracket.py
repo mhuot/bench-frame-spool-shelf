@@ -43,7 +43,7 @@ BUILD_VARIANT = "bracket"
 # Set True only to deliberately discard a hand edit in the document.
 ALLOW_OVERWRITE = False
 
-PROJECT_DIR = "/Users/mhuot/lan-spool-shelf"
+PROJECT_DIR = "/Users/mhuot/bench-frame-spool-shelf"
 FUSION_PROJECT_NAME = "LAN Spool Shelf"
 
 # --- Measurements that are not model dimensions -----------------------------
