@@ -2,9 +2,9 @@
 
 **[Project site &rarr; mhuot.github.io/bench-frame-spool-shelf](https://mhuot.github.io/bench-frame-spool-shelf/)**
 
-Filament spool storage for an Ergotron LAN Organizer 3000. Two printed
-brackets hook into the slotted DuraFrame uprights and carry two parallel
-rods. Spools rest in the valley between the rods. Lift one straight out,
+Filament spool storage that hangs on the slotted uprights of a steel bench
+frame. Mine is an Ergotron LAN Organizer 3000. Two printed brackets hook
+into the slotted DuraFrame uprights and carry two parallel rods. Spools rest in the valley between the rods. Lift one straight out,
 drop the next one in, nothing else moves. A spool in the cradle rolls
 freely, so it feeds without a fight. No drilling and no hardware. The
 brackets hook in the same way Ergotron's own shelves do.
@@ -13,6 +13,18 @@ The rods are 1" schedule 40 PVC by default. Wooden dowels, aluminium pipe
 and conduit all work too. More on that below.
 
 ![Spool cradle bracket](docs/images/spool_cradle_bracket_iso.png)
+
+## The desk
+
+In the 1990s it felt like every NOC and data center, at least the ones near
+me, had furniture from [Ergotron](https://www.ergotron.com/) in
+[Eagan, Minnesota](https://en.wikipedia.org/wiki/Eagan,_Minnesota). The desks
+matched the look those rooms had and the job they did.
+
+The one I have sat in a data center with a row of computers on it. They ran
+the small ISP my employer operated. I picked it up when the company
+liquidated, after they were no more. The slotted uprights are the same ones
+that held their shelves, which is why nothing here needs a drill.
 
 ## Parts
 

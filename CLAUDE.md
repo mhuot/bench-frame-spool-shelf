@@ -90,3 +90,12 @@ Print brackets lying on a side face (rod axis vertical in the slicer) so
 layer planes coincide with the loaded XZ plane. PETG or PLA+, 4+ perimeters,
 40%+ infill. The hook lips carry ~100 N in tension at full load (8 spools);
 do not print them in a weak orientation.
+
+## Site assets
+
+`scripts/render_part.py` renders an exported STL to a PNG for docs/images
+(copied from skadis-bench-frame-mount, generic). `scripts/stamp_assets.py`
+rewrites every local asset URL in docs/index.html as ?v=<content hash>. Run
+it after regenerating any model or render: Pages caches assets hard, and a
+corrected file kept rendering the old one on a phone with current HTML
+beside it and nothing visibly wrong.

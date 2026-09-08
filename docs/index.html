@@ -155,16 +155,16 @@
 <main>
   <header>
     <h1>Filament everywhere. So it hangs off the old Ergotron.</h1>
-    <p class="tagline">3D printed brackets that hook into the slotted uprights of an Ergotron LAN Organizer 3000 and cradle spools on two rods. No drilling, no hardware, nothing permanent. Free files, MIT licensed.</p>
+    <p class="tagline">3D printed brackets that hook into the slotted uprights of a steel bench frame, an Ergotron LAN Organizer 3000 in my case, and cradle spools on two rods. No drilling, no hardware, nothing permanent. Free files, MIT licensed.</p>
   </header>
 
   <figure class="zoomable">
-    <img src="images/shelf-loaded.jpg" alt="A loaded spool shelf: fifteen filament spools resting on two white PVC rods carried by red printed brackets hooked into a steel upright" data-zoom>
+    <img src="images/shelf-loaded.jpg?v=1bb53a07" alt="A loaded spool shelf: fifteen filament spools resting on two white PVC rods carried by red printed brackets hooked into a steel upright" data-zoom>
     <figcaption>Fifteen spools on one level, and the bracket that holds them. Nothing is screwed to the frame. The brackets hook into the same slots Ergotron's own shelves use, and lift back out.</figcaption>
   </figure>
 
   <model-viewer
-    src="models/spool-shelf.glb"
+    src="models/spool-shelf.glb?v=003eb26d"
     alt="3D model of one shelf level: two printed brackets hooked to uprights, two rods, end caps, three spools resting in the cradle and a label clip"
     camera-controls
     auto-rotate
@@ -181,16 +181,20 @@
   <p>Filament was living in a heap. Bags on the bench, spools stacked on their sides under the printers, and the one I wanted always at the bottom of the pile. Meanwhile the printers were sitting on an Ergotron LAN Organizer 3000, a 2004 vintage steel desk frame with punched slots up every upright. If you were designing a mounting surface for this from scratch, you would end up with that.</p>
   <p>The frame is discontinued. The order guide that outlived it, Ergotron 870-03-006, has frame widths and weight capacities and no slot dimensions at all. So the whole project starts with a ruler.</p>
 
+  <h2>The desk</h2>
+  <p>In the 1990s it felt like every NOC and data center, at least the ones near me, had furniture from <a href="https://www.ergotron.com/">Ergotron</a> in <a href="https://en.wikipedia.org/wiki/Eagan,_Minnesota">Eagan, Minnesota</a>. The desks matched the look those rooms had and the job they did.</p>
+  <p>The one I have sat in a data center with a row of computers on it. They ran the small ISP my employer operated. I picked it up when the company liquidated, after they were no more. The slotted uprights are the same ones that held their shelves, which is why nothing here needs a drill.</p>
+
   <h2>How it works</h2>
   <p>Two brackets hook into one upright each, and two rods span between them. Spools rest in the valley between the rods instead of threading onto a pole. That was not the first design. The first one was a single rod you hang spools on, and it lasted about ten seconds of thinking about daily use. Every spool change means pulling the pole and sliding everything off the end.</p>
   <p>With two rods you lift a spool straight up and out, and drop the next one in. Nothing else moves. A spool sitting in the cradle also rolls freely, so it feeds without a fight.</p>
   <div class="shots">
     <figure>
-      <img src="images/spool_cradle_bracket_iso.png" alt="The cradle bracket: hook blades at the back, triangular arm, two open saddles on top" loading="lazy" data-zoom>
+      <img src="images/spool_cradle_bracket_iso.png?v=d26df1be" alt="The cradle bracket: hook blades at the back, triangular arm, two open saddles on top" loading="lazy" data-zoom>
       <figcaption>The bracket. Hooks at the back, two open saddles on top, one lightening cutout in the middle.</figcaption>
     </figure>
     <figure>
-      <img src="images/rod_end_cap_iso.png" alt="The rod end cap: a wide flange and a ribbed stem" loading="lazy" data-zoom>
+      <img src="images/rod_end_cap_iso.png?v=bc3c34fb" alt="The rod end cap: a wide flange and a ribbed stem" loading="lazy" data-zoom>
       <figcaption>End cap. The stem grips the pipe bore, the flange keeps the rod from walking out of a saddle.</figcaption>
     </figure>
   </div>
@@ -203,7 +207,7 @@
   <p>Then the pipe. Schedule 40 one inch PVC has a published bore of 26.6&nbsp;mm. The actual pipe measured 30. The first set of end caps were scrap by 4&nbsp;mm, which is a lot of millimetres to be wrong by when the number is printed in a table.</p>
   <p>The third mistake was mine. The caps were too snug to start. The fix was not a bigger chamfer but a different rib shape. Each of the four crush ribs now starts flush with the stem at the tip and only rises to full height over the last 6&nbsp;mm, so the cap slides in loose, centres itself, and grips just as the flange lands.</p>
   <figure class="zoomable">
-    <img src="images/shelf-prototype.jpg" alt="An early test with a copper pipe and a length of conduit carrying spools" loading="lazy" data-zoom>
+    <img src="images/shelf-prototype.jpg?v=7963c04f" alt="An early test with a copper pipe and a length of conduit carrying spools" loading="lazy" data-zoom>
     <figcaption>Before buying pipe, a copper offcut and a length of conduit proved the cradle worked. The saddles take anything up to the configured diameter, so the rod is a decision you can put off.</figcaption>
   </figure>
 
@@ -226,11 +230,11 @@
   <h2>The small parts</h2>
   <div class="shots">
     <figure>
-      <img src="images/rod_label_clip_iso.png" alt="The label clip: a C ring with a paddle carrying a label face" loading="lazy" data-zoom>
+      <img src="images/rod_label_clip_iso.png?v=cd7c8872" alt="The label clip: a C ring with a paddle carrying a label face" loading="lazy" data-zoom>
       <figcaption>Label clip. Snaps on from below, slides to sit under its spool, takes a 1" × 2⅛" label.</figcaption>
     </figure>
     <figure>
-      <img src="images/spool_cradle_bracket_iso.png" alt="The bracket again, showing the hook stack" loading="lazy" data-zoom>
+      <img src="images/spool_cradle_bracket_iso.png?v=d26df1be" alt="The bracket again, showing the hook stack" loading="lazy" data-zoom>
       <figcaption>Four hook rows on 1" pitch. The blade column is centred, so one bracket fits any upright.</figcaption>
     </figure>
   </div>
@@ -264,7 +268,7 @@
     <li>STLs for every part, verified watertight against the CAD volume</li>
     <li>STEP and Fusion archives if you want to change things</li>
     <li>The build scripts, with every dimension at the top of one file per part</li>
-    <li>A sibling project, <a href="https://github.com/mhuot/lan-skadis-mount">lan-skadis-mount</a>, hangs an IKEA SKÅDIS pegboard on the same uprights and doubles as a backstop behind the spools</li>
+    <li>A sibling project, <a href="https://github.com/mhuot/skadis-bench-frame-mount">skadis-bench-frame-mount</a>, hangs an IKEA SKÅDIS pegboard on the same uprights and doubles as a backstop behind the spools</li>
   </ul>
   <p><a class="cta" href="https://github.com/mhuot/bench-frame-spool-shelf">Get it on GitHub</a></p>
 
